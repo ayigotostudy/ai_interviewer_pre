@@ -11,17 +11,17 @@
           <h1>{{ interview.candidate }}</h1>
           <span class="position">{{ interview.position }}</span>
         </div>
-      </div>
+    </div>
 
       <div class="header-right">
         <div class="interview-status" :class="getStatusClass(interview.status)">
           {{ getStatusText(interview.status) }}
-        </div>
+          </div>
         <button class="info-toggle-btn" @click="toggleInterviewInfo" :class="{ 'active': !isInterviewInfoCollapsed }">
           <span class="icon">ℹ️</span>
         </button>
-      </div>
-    </div>
+        </div>
+          </div>
 
     <div class="room-content">
       <!-- 可伸缩的面试信息面板 -->
@@ -58,7 +58,7 @@
       <!-- 主面试区域 -->
       <div class="main-interview-area">
         <!-- 聊天区域 -->
-        <div class="chat-container">
+      <div class="chat-container">
           <div class="chat-header">
             <h3>面试对话</h3>
             <div class="chat-actions">
@@ -78,29 +78,10 @@
               <div v-for="msg in messages" :key="msg.id" class="message" :class="msg.type">
                 <div class="message-avatar">
                   <span class="avatar-icon">{{ msg.type === 'ai' ? '🤖' : '👤' }}</span>
-                </div>
+        </div>
                 <div class="message-content">
-                  <div class="message-text">{{ msg.content }}</div>
-                  
-                  <!-- AI消息的评价标签 -->
-                  <div v-if="msg.type === 'ai' && msg.evaluation && msg.evaluation.summary" class="evaluation-tag">
-                    <span 
-                      @click="openEvaluationModal(msg.evaluation)"
-                      class="eval-link"
-                    >
-                      📊 查看评价
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 机器人思考效果 -->
-              <div v-if="isSubmitting" class="message ai thinking">
-                <div class="message-avatar">
-                  <span class="avatar-icon">🤖</span>
-                </div>
-                <div class="message-content">
-                  <div class="thinking-container">
+                  <!-- AI思考中的动态效果 -->
+                  <div v-if="msg.type === 'ai' && msg.isThinking" class="thinking-container">
                     <div class="thinking-text">AI正在思考中</div>
                     <div class="thinking-dots">
                       <span class="dot"></span>
@@ -116,10 +97,27 @@
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
+                  
+                  <!-- 正常消息内容 -->
+                  <div v-else>
+                    <div class="message-text">{{ msg.content }}</div>
+                    
+                    <!-- AI消息的评价标签 -->
+                    <div v-if="msg.type === 'ai' && msg.evaluation && msg.evaluation.summary" class="evaluation-tag">
+                      <span 
+                        @click="openEvaluationModal(msg.evaluation)"
+                        class="eval-link"
+                      >
+                        📊 查看评价
+                      </span>
+                    </div>
+                  </div>
+        </div>
+      </div>
+
+              
+      </div>
+    </div>
 
           <div class="input-container" :class="{ 'slide-up': isInputSlideUp }">
             <div class="input-wrapper">
@@ -152,7 +150,7 @@
               </div>
             </div>
           </div>
-        </div>
+    </div>
 
         <!-- 可伸缩的简历侧边栏 -->
         <div class="resume-sidebar" :class="{ 'collapsed': isResumeCollapsed }">
@@ -358,6 +356,7 @@ interface ChatMessage {
   content: string
   evaluation: any | null
   isExpanded: boolean
+  isThinking?: boolean
 }
 
 // 语音识别相关状态
@@ -416,14 +415,15 @@ const sendMessage = async () => {
   // 清空输入框
   inputMessage.value = ''
   
-  // 显示AI正在思考的状态
+  // 添加AI思考中的消息
   const thinkingMessageId = Date.now() + 1
   messages.value.push({
     id: thinkingMessageId,
     type: 'ai',
-    content: '正在思考中...',
+    content: '',
     evaluation: null,
-    isExpanded: false
+    isExpanded: false,
+    isThinking: true
   })
   
   try {
@@ -435,90 +435,91 @@ const sendMessage = async () => {
     
     console.log('AI面试响应:', response)
     
-    // 移除"正在思考中..."消息
+    // 找到思考中的消息并更新为正常消息
     const thinkingIndex = messages.value.findIndex(msg => msg.id === thinkingMessageId)
     if (thinkingIndex !== -1) {
-      messages.value.splice(thinkingIndex, 1)
-    }
-    
-    // API返回格式：{ code: 1000, msg: "success", data: {...} }
-    if (response.data.code === 1000) {
-      // 解析评价数据
-      const evaluation = parseEvaluation(response)
-      
-      // 检查是否有评价数据
-      if (evaluation && evaluation.summary) {
-        currentEvaluation.value = evaluation
+      // API返回格式：{ code: 1000, msg: "success", data: {...} }
+      if (response.data.code === 1000) {
+        // 解析评价数据
+        const evaluation = parseEvaluation(response)
         
-        // 只显示下一个问题，不显示评价总结
-        if (evaluation.nextQuestion && evaluation.nextQuestion.trim()) {
-          console.log('使用解析到的问题:', evaluation.nextQuestion)
-          messages.value.push({
-            id: Date.now() + 2,
-            type: 'ai',
-            content: evaluation.nextQuestion,
-            evaluation: evaluation,
-            isExpanded: false
-          })
+        // 检查是否有评价数据
+        if (evaluation && evaluation.summary) {
+          currentEvaluation.value = evaluation
+          
+          // 只显示下一个问题，不显示评价总结
+          if (evaluation.nextQuestion && evaluation.nextQuestion.trim()) {
+            console.log('使用解析到的问题:', evaluation.nextQuestion)
+            messages.value[thinkingIndex] = {
+              id: thinkingMessageId,
+              type: 'ai',
+              content: evaluation.nextQuestion,
+              evaluation: evaluation,
+              isExpanded: false,
+              isThinking: false
+            }
+          } else {
+            // 如果没有解析到问题，显示完整的reply内容
+            const aiResponse = response.data.data?.reply || '感谢您的回答，请继续下一个问题。'
+            console.log('使用完整reply内容:', aiResponse)
+            messages.value[thinkingIndex] = {
+              id: thinkingMessageId,
+              type: 'ai',
+              content: aiResponse,
+              evaluation: evaluation, // 仍然保存评价数据用于标签显示
+              isExpanded: false,
+              isThinking: false
+            }
+          }
+          
+          // 更新面试记录
+          if (response.data.data?.interview_record) {
+            interviewRecord.value = response.data.data.interview_record
+            console.log('面试记录更新:', interviewRecord.value)
+          }
+          
         } else {
-          // 如果没有解析到问题，尝试从其他字段获取
-          const aiResponse = response.data.data?.reply || response.data.data?.question || '感谢您的回答，请继续下一个问题。'
-          console.log('使用备用回复:', aiResponse)
-          messages.value.push({
-            id: Date.now() + 2,
+          // 没有评价数据，显示完整的reply内容
+          const aiResponse = response.data.data?.reply || '感谢您的回答，请继续下一个问题。'
+          console.log('没有评价数据，显示完整reply:', aiResponse)
+          messages.value[thinkingIndex] = {
+            id: thinkingMessageId,
             type: 'ai',
             content: aiResponse,
-            evaluation: evaluation, // 仍然保存评价数据用于标签显示
-            isExpanded: false
-          })
-        }
-        
-        // 更新面试记录
-        if (response.data.data?.interview_record) {
-          interviewRecord.value = response.data.data.interview_record
-          console.log('面试记录更新:', interviewRecord.value)
+            evaluation: null,
+            isExpanded: false,
+            isThinking: false
+          }
         }
         
       } else {
-        // 没有评价数据，只显示问题
-        const aiResponse = response.data.data?.reply || response.data.data?.question || '感谢您的回答，请继续下一个问题。'
-        messages.value.push({
-          id: Date.now() + 2,
+        // 显示错误消息
+        messages.value[thinkingIndex] = {
+          id: thinkingMessageId,
           type: 'ai',
-          content: aiResponse,
+          content: `抱歉，处理您的回答时出现了问题: ${response.data.msg || '未知错误'}`,
           evaluation: null,
-          isExpanded: false
-        })
+          isExpanded: false,
+          isThinking: false
+        }
       }
-      
-    } else {
-      // 显示错误消息
-      messages.value.push({
-        id: Date.now() + 2,
-        type: 'ai',
-        content: `抱歉，处理您的回答时出现了问题: ${response.data.msg || '未知错误'}`,
-        evaluation: null,
-        isExpanded: false
-      })
     }
     
   } catch (error) {
     console.error('AI面试接口调用失败:', error)
     
-    // 移除"正在思考中..."消息
+    // 找到思考中的消息并更新为错误消息
     const thinkingIndex = messages.value.findIndex(msg => msg.id === thinkingMessageId)
     if (thinkingIndex !== -1) {
-      messages.value.splice(thinkingIndex, 1)
+      messages.value[thinkingIndex] = {
+        id: thinkingMessageId,
+        type: 'ai',
+        content: '抱歉，网络连接出现问题，请稍后重试。',
+        evaluation: null,
+        isExpanded: false,
+        isThinking: false
+      }
     }
-    
-    // 显示错误消息
-    messages.value.push({
-      id: Date.now() + 2,
-      type: 'ai',
-      content: '抱歉，网络连接出现问题，请稍后重试。',
-      evaluation: null,
-      isExpanded: false
-    })
   } finally {
     // 重置提交状态
     isSubmitting.value = false
@@ -878,40 +879,52 @@ const parseEvaluation = (response: any) => {
     let currentText = replyText
     
     // 解析✅标记的优点
-    const goodMatch = currentText.match(/✅([^❌]+?)(?=❌|可追问|问题:|$)/)
-    if (goodMatch) {
-      evaluation.goodPoints = [goodMatch[1].trim()]
-      currentText = currentText.replace(goodMatch[0], '')
+    const goodMatches = currentText.match(/✅\s*([^❌\n]+)/g)
+    if (goodMatches) {
+      evaluation.goodPoints = goodMatches.map((match: string) => 
+        match.replace('✅', '').trim()
+      )
+      console.log('提取到优点:', evaluation.goodPoints)
     }
     
     // 解析❌标记的缺点
-    const badMatch = currentText.match(/❌([^✅]+?)(?=✅|可追问|问题:|$)/)
-    if (badMatch) {
-      evaluation.badPoints = [badMatch[1].trim()]
-      currentText = currentText.replace(badMatch[0], '')
+    const badMatches = currentText.match(/❌\s*([^✅\n]+)/g)
+    if (badMatches) {
+      evaluation.badPoints = badMatches.map((match: string) => 
+        match.replace('❌', '').trim()
+      )
+      console.log('提取到缺点:', evaluation.badPoints)
     }
     
-    // 提取可追问的知识点
-    const followUpMatch = currentText.match(/###\s*可追问的知识点\s*\n*([^问题]+?)(?=###\s*问题|$)/)
+    // 提取可追问的知识点 - 适配新格式
+    const followUpMatch = currentText.match(/可追问的知识点：\s*([^\n]+)/)
     if (followUpMatch) {
       const followUpText = followUpMatch[1].trim()
       evaluation.followUpQuestions = followUpText
         .split(/[,，、\n]/)
         .map((item: string) => item.trim())
         .filter((item: string) => item.length > 0)
+      console.log('提取到可追问知识点:', evaluation.followUpQuestions)
     }
     
-    // 提取下一个问题 - 修复正则表达式
-    const questionMatch = currentText.match(/###\s*问题\s*\n*(.+)/)
+    // 提取下一个问题 - 适配新格式
+    const questionMatch = currentText.match(/问题：\s*([^\n]+)/)
     if (questionMatch) {
       evaluation.nextQuestion = questionMatch[1].trim()
       console.log('提取到问题:', evaluation.nextQuestion)
     } else {
-      // 如果没有找到 ### 问题 格式，尝试其他格式
-      const altQuestionMatch = currentText.match(/问题:\s*(.+)/)
-      if (altQuestionMatch) {
-        evaluation.nextQuestion = altQuestionMatch[1].trim()
-        console.log('提取到问题(备用格式):', evaluation.nextQuestion)
+      // 尝试匹配 **问题**： 格式
+      const boldQuestionMatch = currentText.match(/\*\*问题\*\*：\s*([^\n]+)/)
+      if (boldQuestionMatch) {
+        evaluation.nextQuestion = boldQuestionMatch[1].trim()
+        console.log('提取到问题(粗体格式):', evaluation.nextQuestion)
+      } else {
+        // 如果没有找到 "问题：" 格式，尝试其他格式
+        const altQuestionMatch = currentText.match(/问题:\s*([^\n]+)/)
+        if (altQuestionMatch) {
+          evaluation.nextQuestion = altQuestionMatch[1].trim()
+          console.log('提取到问题(备用格式):', evaluation.nextQuestion)
+        }
       }
     }
     
@@ -1991,6 +2004,453 @@ onUnmounted(() => {
   }
   50% {
     box-shadow: 0 0 30px rgba(102, 126, 234, 0.8);
+    transform: scale(1.05);
+  }
+}
+
+/* 弹框样式 */
+.resume-selector-overlay,
+.evaluation-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.resume-selector,
+.evaluation-modal {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* 简历选择器样式 */
+.resume-selector {
+  width: 600px;
+  max-height: 80vh;
+}
+
+.selector-header {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.selector-header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.resume-selector > p {
+  padding: 1.5rem 2rem 1rem;
+  margin: 0;
+  color: #6b7280;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.resume-list {
+  padding: 0 2rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.resume-item {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.resume-item:hover {
+  border-color: #10b981;
+  background: #f0fdf4;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.15);
+}
+
+.resume-item.selected {
+  border-color: #10b981;
+  background: #ecfdf5;
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2);
+}
+
+.resume-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.resume-preview {
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.resume-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.no-resumes {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.create-resume-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-top: 1rem;
+  transition: all 0.3s ease;
+}
+
+.create-resume-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+}
+
+.uploading-status {
+  padding: 1rem 2rem;
+  text-align: center;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #10b981;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.selector-actions {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cancel-btn {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+/* 评价弹窗样式 */
+.evaluation-modal {
+  width: 700px;
+  max-height: 80vh;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.modal-content {
+  padding: 2rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.eval-section {
+  margin-bottom: 2rem;
+}
+
+.eval-section h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.eval-text {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.eval-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.eval-tag {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.eval-tag.good-tag {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.eval-tag.bad-tag {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.eval-tag.followup-tag {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+.eval-tag:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .resume-selector,
+  .evaluation-modal {
+    width: 95vw;
+    margin: 1rem;
+  }
+  
+  .selector-header,
+  .modal-header {
+    padding: 1rem 1.5rem;
+  }
+  
+  .resume-selector > p,
+  .resume-list,
+  .modal-content {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+/* 动态思考效果样式 */
+.thinking-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.thinking-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #667eea;
+  margin: 0;
+}
+
+.thinking-dots {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background: #667eea;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+.thinking-animation {
+  position: relative;
+  width: 60px;
+  height: 40px;
+}
+
+.brain-waves {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.wave {
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 2px;
+  animation: wave 1.2s ease-in-out infinite;
+}
+
+.wave:nth-child(1) { animation-delay: 0s; }
+.wave:nth-child(2) { animation-delay: 0.1s; }
+.wave:nth-child(3) { animation-delay: 0.2s; }
+.wave:nth-child(4) { animation-delay: 0.3s; }
+
+@keyframes wave {
+  0%, 100% {
+    height: 8px;
+    opacity: 0.6;
+  }
+  50% {
+    height: 24px;
+    opacity: 1;
+  }
+}
+
+/* 消息头像发光效果 */
+.message.ai .message-avatar {
+  position: relative;
+}
+
+.message.ai .message-avatar::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  z-index: -1;
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
     transform: scale(1.05);
   }
 }
