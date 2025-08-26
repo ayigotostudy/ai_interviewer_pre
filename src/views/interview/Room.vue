@@ -95,9 +95,9 @@
                         <div class="wave"></div>
                         <div class="wave"></div>
                       </div>
-                    </div>
-                  </div>
-                  
+        </div>
+      </div>
+
                   <!-- 正常消息内容 -->
                   <div v-else>
                     <div class="message-text">{{ msg.content }}</div>
@@ -111,9 +111,9 @@
                         📊 查看评价
                       </span>
                     </div>
-                  </div>
         </div>
       </div>
+    </div>
 
               
       </div>
