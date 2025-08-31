@@ -65,6 +65,27 @@ const routes = [
     path: '/interview/edit/:id',
     name: 'InterviewEdit',
     component: () => import('../views/interview/Edit.vue')
+  },
+  {
+    path: '/interview/evaluation/:id',
+    name: 'InterviewEvaluation',
+    component: () => import('../views/interview/Evaluation.vue')
+  },
+  // 知识库模块路由
+  {
+    path: '/wiki',
+    name: 'WikiIndex',
+    component: () => import('../views/wiki/Index.vue')
+  },
+  {
+    path: '/wiki/:id',
+    name: 'WikiDetail',
+    component: () => import('../views/wiki/Detail.vue')
+  },
+  {
+    path: '/wiki/query',
+    name: 'WikiQuery',
+    component: () => import('../views/wiki/Query.vue')
   }
 ]
 

@@ -25,6 +25,10 @@
             <span class="nav-icon">💼</span>
             面试管理
           </router-link>
+          <router-link to="/wiki" class="nav-item" active-class="active">
+            <span class="nav-icon">📚</span>
+            知识库
+          </router-link>
         </nav>
 
         <!-- 用户区域 -->

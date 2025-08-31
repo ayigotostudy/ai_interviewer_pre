@@ -36,6 +36,13 @@
           <span class="card-arrow">→</span>
         </router-link>
 
+        <router-link to="/wiki" class="action-card knowledge-base">
+          <div class="card-icon">📚</div>
+          <h3>知识库</h3>
+          <p>构建和管理您的个人知识体系</p>
+          <span class="card-arrow">→</span>
+        </router-link>
+
         <div class="action-card stats">
           <div class="card-icon">📊</div>
           <h3>数据统计</h3>
@@ -219,6 +226,10 @@ onMounted(() => {
 
 .action-card.manage-interview:hover {
   border-color: #F59E0B;
+}
+
+.action-card.knowledge-base:hover {
+  border-color: #8B5CF6;
 }
 
 .card-icon {

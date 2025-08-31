@@ -84,15 +84,7 @@
               </div>
             </div>
             
-            <div class="form-group">
-              <label for="remark">备注</label>
-              <textarea
-                id="remark"
-                v-model="interviewForm.remark"
-                placeholder="其他备注信息"
-                rows="3"
-              ></textarea>
-            </div>
+
             
             <div class="form-actions">
               <button type="button" class="cancel-btn" @click="showCreateForm = false">
@@ -123,7 +115,7 @@
           <select v-model="statusFilter" @change="filterInterviews">
             <option value="all">全部状态</option>
             <option value="planned">待开始</option>
-            <option value="in_progress">进行中</option>
+                            <option value="interviewing">进行中</option>
             <option value="completed">已完成</option>
             <option value="canceled">已取消</option>
           </select>
@@ -172,10 +164,7 @@
                 <span class="value">{{ formatDescription(interview.job_description) }}</span>
               </div>
               
-              <div class="info-item" v-if="interview.remark">
-                <span class="label">备注：</span>
-                <span class="value">{{ interview.remark }}</span>
-              </div>
+
             </div>
 
             <div class="interview-actions">
@@ -185,7 +174,7 @@
               </button>
               
               <button 
-                v-if="interview.status === 'planned'" 
+                v-if="interview.status === 'planned' || interview.status === 'interviewing'" 
                 class="action-btn start-btn" 
                 @click="startInterview(interview.id)"
               >
@@ -254,8 +243,7 @@ const interviewForm = ref({
   position: '',
   job_description: '',
   time: '',
-  duration: '60',
-  remark: ''
+  duration: '60'
 })
 
 // 搜索和筛选
@@ -274,7 +262,7 @@ const filteredInterviews = ref<any[]>([])
 const getStatusClass = (status: string) => {
   const statusClasses: { [key: string]: string } = {
     planned: 'status-planned',
-    in_progress: 'status-progress',
+    interviewing: 'status-progress',
     completed: 'status-completed',
     canceled: 'status-canceled'
   }
@@ -284,7 +272,7 @@ const getStatusClass = (status: string) => {
 const getStatusText = (status: string) => {
   const statusTexts: { [key: string]: string } = {
     planned: '待开始',
-    in_progress: '进行中',
+    interviewing: '进行中',
     completed: '已完成',
     canceled: '已取消'
   }
@@ -321,8 +309,7 @@ const createInterview = async () => {
       position: interviewForm.value.position,
       job_description: interviewForm.value.job_description,
       time: new Date(interviewForm.value.time).getTime() / 1000,
-      status: 'planned',
-      remark: interviewForm.value.remark
+      status: 'planned'
     }
 
     await createMeeting(interviewData)
@@ -335,8 +322,7 @@ const createInterview = async () => {
       position: '',
       job_description: '',
       time: '',
-      duration: '60',
-      remark: ''
+      duration: '60'
     }
     
     // 重新加载数据
@@ -482,7 +468,7 @@ const loadMockData = () => {
       job_description: '负责公司核心产品的架构设计和开发，要求5年以上Java开发经验，熟悉Spring Boot、MySQL等技术栈。',
       time: Date.now() / 1000 + 3600, // 1小时后
       status: 'planned',
-      remark: '候选人技术背景较强，重点关注系统设计能力'
+
     },
     {
       id: 2,
@@ -491,7 +477,7 @@ const loadMockData = () => {
       job_description: '负责产品规划和需求分析，与开发团队协作推进产品迭代，要求3年以上产品经验。',
       time: Date.now() / 1000 + 7200, // 2小时后
       status: 'planned',
-      remark: ''
+
     }
   ]
 }
