@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # 后端服务
+  backend:
+    image: your-backend-image:latest  # 替换为你的后端镜像
+    # 或者使用 build 构建后端
+    # build: ./backend
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    container_name: aijianli-backend
+    environment:
+      - NODE_ENV=production
+    # 如果有数据库，添加依赖
+    # depends_on:
+    #   - database
+
+  # 前端服务
+  aijianli-frontend:
+    build: .
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    container_name: aijianli-frontend
+    depends_on:
+      - backend
+    # 如果需要网络通信，确保服务在同一网络中
+    networks:
+      - aijianli-network
+
+  # 数据库服务（如果需要）
+  # database:
+  #   image: mysql:8.0
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: your_password
+  #     MYSQL_DATABASE: aijianli
+  #   ports:
+  #     - "3306:3306"
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+  #   restart: unless-stopped
+  #   container_name: aijianli-database
+
+networks:
+  aijianli-network:
+    driver: bridge
+
+# volumes:
+#   mysql_data:

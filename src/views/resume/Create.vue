@@ -75,7 +75,7 @@
           <!-- 欢迎消息 -->
           <div class="message ai-message">
             <div class="message-avatar">
-              <img src="https://via.placeholder.com/40x40/2563EB/ffffff?text=AI" alt="AI助手" />
+              <img src="/offer.png" alt="智能助手" />
             </div>
             <div class="message-content">
               <div class="message-text">
@@ -89,7 +89,7 @@
           <!-- 合并后的时间序消息流（从旧到新，直接遍历） -->
           <div v-for="(msg, i) in messages" :key="i" :class="['message', msg.role === 'user' ? 'user-message' : 'ai-message']">
             <div class="message-avatar">
-              <img v-if="msg.role==='ai'" src="https://via.placeholder.com/40x40/2563EB/ffffff?text=AI" alt="AI助手" />
+              <img v-if="msg.role==='ai'" src="/offer.png" alt="智能助手" />
               <img v-else src="https://via.placeholder.com/40x40/10B981/ffffff?text=我" alt="我" />
             </div>
             <div class="message-content">
@@ -101,7 +101,7 @@
           <!-- 当前问题 -->
           <div v-if="currentQuestion && !isCompleted" class="message ai-message">
             <div class="message-avatar">
-              <img src="https://via.placeholder.com/40x40/2563EB/ffffff?text=AI" alt="AI助手" />
+              <img src="/offer.png" alt="智能助手" />
             </div>
             <div class="message-content">
               <div class="message-text">
@@ -118,7 +118,7 @@
           <!-- 完成消息 -->
           <div v-if="isCompleted" class="message ai-message">
             <div class="message-avatar">
-              <img src="https://via.placeholder.com/40x40/2563EB/ffffff?text=AI" alt="AI助手" />
+              <img src="/offer.png" alt="智能助手" />
             </div>
             <div class="message-content">
               <div class="message-text">

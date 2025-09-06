@@ -382,7 +382,7 @@ const updateKnowledgeBase = async () => {
   
   try {
     const response = await updateWiki(editingWiki.value)
-    if (response.code === 0) {
+    if (response.code === 1000) {
       showEditModal.value = false
       editingWiki.value = null
       await loadWikiList()
@@ -397,7 +397,7 @@ const deleteWiki = async (id: number) => {
   
   try {
     const response = await deleteWikiService(id)
-    if (response.code === 0) {
+    if (response.code === 1000) {
       await loadWikiList()
     }
   } catch (error) {

@@ -90,8 +90,20 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/'),
   routes
 })
+
+// 添加路由调试日志
+router.beforeEach((to, from, next) => {
+  console.log('🛣️ 路由跳转:', { from: from.path, to: to.path, fullPath: to.fullPath })
+  next()
+})
+
+router.afterEach((to, from) => {
+  console.log('✅ 路由跳转完成:', { to: to.path, from: from.path })
+})
+
+console.log('🚀 路由配置完成, 基础路径:', process.env.NODE_ENV === 'production' ? '/dist/' : '/')
 
 export default router

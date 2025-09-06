@@ -831,7 +831,7 @@ const deleteNode = async (id: number) => {
   
   try {
     const response = await deleteWiki(id)
-    if (response.code === 0) {
+    if (response.code === 1000) {
       if (selectedNode.value?.ID === id) {
         selectedNode.value = null
       }

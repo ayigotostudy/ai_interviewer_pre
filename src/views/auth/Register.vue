@@ -3,10 +3,10 @@
     <div class="register-card">
       <div class="logo-section">
         <div class="logo">
-          <img src="https://via.placeholder.com/80x80/2563EB/ffffff?text=AI" alt="AI简历助手" />
+          <img src="/offer.png" alt="Easy Offer" />
         </div>
         <h1>创建账号</h1>
-        <p>加入AI简历助手，开启智能求职之旅</p>
+        <p>加入Easy Offer，开启智能求职之旅</p>
       </div>
 
       <form @submit.prevent="handleRegister" class="register-form">
@@ -46,6 +46,7 @@
           <p class="help-text">验证码已发送至 {{ form.email }}</p>
         </div>
 
+
         <div v-if="step >= 2" class="form-group">
           <label for="password">设置密码</label>
           <input
@@ -55,7 +56,9 @@
             placeholder="请设置6位以上密码"
             required
             :disabled="loading"
+            minlength="6"
           />
+          <p class="help-text">密码长度至少6位，建议包含字母和数字</p>
         </div>
 
         <div v-if="step >= 2" class="form-group">
@@ -67,7 +70,11 @@
             placeholder="请再次输入密码"
             required
             :disabled="loading"
+            minlength="6"
           />
+          <p v-if="form.confirmPassword && form.password !== form.confirmPassword" class="error-text">
+            两次输入的密码不一致
+          </p>
         </div>
 
         <div v-if="error" class="error-message">
@@ -129,13 +136,13 @@ const sendVerifyCode = async () => {
 
   try {
     const response = await getAuthCode(form.value.email)
-    
-    if (response.code === 0 || response.code === '0') {
+    console.log(response)
+    if (response.data.code === 1000 || response.data.code === '1000') {
       success.value = '验证码已发送，请查收邮件'
       step.value = 2
       startCountdown()
     } else {
-      error.value = response.msg || '发送验证码失败，请重试'
+      error.value = response.data.msg || '发送验证码失败，请重试'
     }
   } catch (err: any) {
     console.error('发送验证码失败:', err)
@@ -186,13 +193,13 @@ const handleRegister = async () => {
       password: form.value.password
     })
 
-    if (response.code === 0 || response.code === '0') {
+    if (response.data.code === 1000 || response.data.code === '1000') {
       success.value = '注册成功！正在跳转到登录页面...'
       setTimeout(() => {
         router.push('/login')
       }, 2000)
     } else {
-      error.value = response.msg || '注册失败，请重试'
+      error.value = response.data.msg || '注册失败，请重试'
     }
   } catch (err: any) {
     console.error('注册失败:', err)
@@ -323,6 +330,26 @@ const handleRegister = async () => {
   margin: 0.5rem 0 0 0;
   font-size: 0.8rem;
   color: #6B7280;
+}
+
+.error-text {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.8rem;
+  color: #DC2626;
+}
+
+.debug-info {
+  background: #F3F4F6;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+.debug-info p {
+  margin: 0.25rem 0;
 }
 
 .error-message {

@@ -4,7 +4,7 @@
     <div class="welcome-section">
       <div class="welcome-content">
         <h1 class="welcome-title">欢迎回来，{{ username }}！</h1>
-        <p class="welcome-subtitle">AI简历助手为您提供专业的简历制作和面试管理服务</p>
+        <p class="welcome-subtitle">Easy Offer为您提供专业的简历制作和面试管理服务</p>
       </div>
       <div class="welcome-illustration">
         <span class="illustration-icon">🎯</span>
@@ -18,7 +18,7 @@
         <router-link to="/resume/create" class="action-card create-resume">
           <div class="card-icon">✨</div>
           <h3>创建简历</h3>
-          <p>使用AI助手快速生成专业简历</p>
+          <p>使用智能助手快速生成专业简历</p>
           <span class="card-arrow">→</span>
         </router-link>
 

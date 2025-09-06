@@ -6,8 +6,8 @@
         <!-- Logo区域 -->
         <div class="header-logo">
           <router-link to="/" class="logo-link">
-            <span class="logo-icon">🎯</span>
-            <span class="logo-text">AI简历助手</span>
+            <img src="/offer.png" alt="Easy Offer" class="logo-icon" />
+            <span class="logo-text">Easy Offer</span>
           </router-link>
         </div>
 
@@ -63,8 +63,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+
+console.log('📱 App.vue 组件初始化...')
 
 const router = useRouter()
 const route = useRoute()
@@ -72,6 +74,15 @@ const route = useRoute()
 // 用户状态
 const isLoggedIn = ref(!!localStorage.getItem('token'))
 const username = ref(localStorage.getItem('username') || '用户')
+
+console.log('👤 用户状态:', { isLoggedIn: isLoggedIn.value, username: username.value })
+console.log('🛣️ 当前路由:', route.path)
+
+onMounted(() => {
+  console.log('🎯 App.vue 组件已挂载')
+  console.log('🌐 当前URL:', window.location.href)
+  console.log('📁 基础路径:', import.meta.env.BASE_URL)
+})
 
 // 是否显示header（除了登录页面都显示）
 const showHeader = computed(() => {
@@ -144,7 +155,9 @@ updateUserStatus()
   }
 
   .logo-icon {
-    font-size: 2rem;
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
   }
 

@@ -6,6 +6,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // 如果部署在子目录，设置 base 路径
+  base: process.env.NODE_ENV === 'production' ? '/' : '/',
   plugins: [
     vue(),
     vueDevTools(),
@@ -20,7 +22,15 @@ export default defineConfig({
       input: {
         main: fileURLToPath(new URL('./index.html', import.meta.url))
       }
-    }
+    },
+    // 生产环境保留 console 语句用于调试
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
   },
   server: {
     proxy: {

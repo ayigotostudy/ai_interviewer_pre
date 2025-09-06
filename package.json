@@ -1,5 +1,5 @@
 {
-  "name": "aijianli-pro",
+  "name": "easy-offer",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -25,6 +25,7 @@
     "@arco-design/web-vue": "^2.57.0",
     "@types/markdown-it": "^14.1.2",
     "@vitejs/plugin-vue": "^6.0.1",
+    "terser": "^5.44.0",
     "vite": "^7.0.6",
     "vite-plugin-vue-devtools": "^8.0.0"
   }

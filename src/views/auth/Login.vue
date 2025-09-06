@@ -3,10 +3,10 @@
     <div class="login-card">
       <div class="logo-section">
         <div class="logo">
-          <img src="https://via.placeholder.com/80x80/2563EB/ffffff?text=AI" alt="AI简历助手" />
+          <img src="/offer.png" alt="Easy Offer" />
         </div>
-        <h1>AI简历助手</h1>
-        <p>智能简历创建 · AI面试助手</p>
+        <h1>Easy Offer</h1>
+        <p>智能简历创建 · 面试管理助手</p>
       </div>
 
       <form @submit.prevent="handleLogin" class="login-form">
