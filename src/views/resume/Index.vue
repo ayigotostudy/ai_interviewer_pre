@@ -3,10 +3,16 @@
     <div class="list-header">
       <div class="header-content">
         <h1>我的简历</h1>
-        <button class="create-btn" @click="createResume">
-          <span class="icon">➕</span>
-          创建简历
-        </button>
+        <div class="header-actions">
+          <button class="test-btn" @click="testCanvasEditor">
+            <span class="icon">🎨</span>
+            测试Canvas编辑器
+          </button>
+          <button class="create-btn" @click="createResume">
+            <span class="icon">➕</span>
+            创建简历
+          </button>
+        </div>
       </div>
     </div>
 
@@ -188,6 +194,10 @@ const createResume = () => {
   router.push('/resume/create')
 }
 
+const testCanvasEditor = () => {
+  router.push('/resume/canvas-test')
+}
+
 const viewResume = (resume: ResumeListItem) => {
   // 使用后端返回的正确ID字段
   const resumeId = resume.ID
@@ -327,6 +337,12 @@ Java, Spring Boot, MySQL, Redis, Docker`,
   align-items: center;
 }
 
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
 .header-content h1 {
   margin: 0;
   font-size: 1.5rem;
@@ -351,6 +367,25 @@ Java, Spring Boot, MySQL, Redis, Docker`,
 
 .create-btn:hover {
   background: #1D4ED8;
+}
+
+.test-btn {
+  background: #8B5CF6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.test-btn:hover {
+  background: #7C3AED;
 }
 
 .list-content {

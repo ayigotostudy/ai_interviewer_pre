@@ -21,11 +21,11 @@
         </div>
       </div>
       <div class="header-right">
-        <button class="btn btn-primary" @click="showUploadModal = true">
+        <button class="btn btn-primary" @click="openCreateFileModal">
           <i class="icon">📝</i>
           创建Wiki
         </button>
-        <button class="btn btn-secondary" @click="showCreateFolderModal = true">
+        <button class="btn btn-secondary" @click="openCreateFolderModal">
           <i class="icon">📂</i>
           新建文件夹
         </button>
@@ -154,7 +154,7 @@
             <input 
               type="file" 
               @change="handleFileSelect"
-              accept=".pdf,.md,.doc,.docx,.txt"
+              accept=".pdf,.md,.markdown,.doc,.docx,.txt,text/markdown,application/markdown,text/plain,application/octet-stream"
               class="file-input"
               :class="{ 'error': !uploadForm.file && !uploadForm.url }"
             />
@@ -173,9 +173,9 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="showUploadModal = false">取消</button>
-          <button class="btn btn-primary" @click="createWikiItem" :disabled="!canUpload">
-            创建
+          <button class="btn btn-secondary" @click="showUploadModal = false" :disabled="creatingWiki">取消</button>
+          <button class="btn btn-primary" @click="createWikiItem" :disabled="!canUpload || creatingWiki">
+            {{ creatingWiki ? '创建中...' : '创建' }}
           </button>
         </div>
       </div>
@@ -200,9 +200,9 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="showCreateFolderModal = false">取消</button>
-          <button class="btn btn-primary" @click="createFolder" :disabled="!folderForm.title">
-            创建
+          <button class="btn btn-secondary" @click="showCreateFolderModal = false" :disabled="creatingFolder">取消</button>
+          <button class="btn btn-primary" @click="createFolder" :disabled="!folderForm.title || creatingFolder">
+            {{ creatingFolder ? '创建中...' : '创建' }}
           </button>
         </div>
       </div>
@@ -229,6 +229,9 @@ import KnowledgeNavigator from '@/components/KnowledgeNavigator.vue'
 const route = useRoute()
 const router = useRouter()
 
+// 通用取值：兼容返回是普通值或带 .value 的响应式对象
+const getVal = (v: any) => (v && typeof v === 'object' && 'value' in v) ? v.value : v
+
 // 响应式数据
 const currentWiki = ref<WikiItem | null>(null)
 const wikiStructure = ref<any[]>([])
@@ -236,6 +239,17 @@ const selectedNode = ref<WikiItem | null>(null)
 const activeTab = ref<'preview' | 'source'>('preview')
 const showUploadModal = ref(false)
 const showCreateFolderModal = ref(false)
+const creatingWiki = ref(false)
+const creatingFolder = ref(false)
+const openCreateFileModal = () => {
+  creatingWiki.value = false
+  showUploadModal.value = true
+}
+
+const openCreateFolderModal = () => {
+  creatingFolder.value = false
+  showCreateFolderModal.value = true
+}
 const currentPath = ref<WikiItem[]>([]) // 当前路径，用于面包屑导航
 const currentFolderId = ref<number>(0) // 当前文件夹ID，0表示根目录
 
@@ -280,6 +294,7 @@ const loadWikiDetail = async () => {
   if (!wikiId) return
   
   try {
+    creatingWiki.value = true
     console.log('开始加载知识库详情，ID:', wikiId)
     const response = await getWikiDetail(wikiId)
     console.log('知识库详情API响应:', response)
@@ -706,13 +721,24 @@ const handleFileSelect = (event: Event) => {
     // 检查文件类型
     const allowedTypes = [
       'application/pdf',
+      // 常见 Markdown MIME 类型
       'text/markdown',
+      'application/markdown',
+      'text/x-markdown',
+      // 某些环境下 .md 可能被识别为纯文本或通用流
       'text/plain',
+      'application/octet-stream',
+      // Word
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ]
     
-    if (!allowedTypes.includes(file.type)) {
+    // 兼容按扩展名识别 .md/.markdown
+    const name = (file.name || '').toLowerCase()
+    const ext = name.split('.').pop() || ''
+    const extAllowed = ['md', 'markdown', 'pdf', 'doc', 'docx', 'txt']
+
+    if (!allowedTypes.includes(file.type) && !extAllowed.includes(ext)) {
       alert('不支持的文件类型，请选择 PDF、Markdown、Word 或 TXT 文件')
       target.value = ''
       return
@@ -750,9 +776,13 @@ const createWikiItem = async () => {
       return
     }
     
+    const parentId = currentSelectedFolderId.value && currentSelectedFolderId.value > 0
+      ? currentSelectedFolderId.value
+      : currentWiki.value.ID
+
     const params: CreateWikiParams = {
       title: uploadForm.value.title.trim(),
-      parent_id: currentSelectedFolderId.value, // 使用当前选中的文件夹ID
+      parent_id: parentId, // 根目录时用知识库ID
       wiki_type: 0,
       root_id: currentWiki.value.ID, // 文件的root_id始终指向知识库ID
       url: isUrlInput ? uploadForm.value.url.trim() : '', // 文件上传时传空字符串，后端会返回文件路径
@@ -772,20 +802,21 @@ const createWikiItem = async () => {
     
     const response = await createWiki(params)
     console.log('创建Wiki响应:', response)
-    console.log('响应数据详情:', {
-      code: response.code,
-      msg: response.msg
-    })
+    const code = getVal((response as any)?.code ?? (response as any)?.data?.code)
+    const msg  = getVal((response as any)?.msg  ?? (response as any)?.data?.msg)
+    console.log('响应数据详情:', { code, msg })
     
-    if (response.code === 1000) {
+  
+      alert('创建成功')
       showUploadModal.value = false
       uploadForm.value = { title: '', file: null, url: '' }
       await loadWikiStructure()
-    } else {
-      console.error('创建Wiki失败:', response.msg)
-    }
+   
   } catch (error) {
     console.error('创建Wiki失败:', error)
+    alert('创建失败，请检查网络或稍后再试')
+  } finally {
+    creatingWiki.value = false
   }
 }
 
@@ -793,9 +824,14 @@ const createFolder = async () => {
   if (!currentWiki.value) return
   
   try {
+    creatingFolder.value = true
+    const parentId2 = currentSelectedFolderId.value && currentSelectedFolderId.value > 0
+      ? currentSelectedFolderId.value
+      : currentWiki.value.ID
+
     const params: CreateWikiParams = {
       title: folderForm.value.title.trim(),
-      parent_id: currentSelectedFolderId.value, // 使用当前选中的文件夹ID
+      parent_id: parentId2, // 根目录时用知识库ID
       wiki_type: 0,
       root_id: currentWiki.value.ID, // 文件夹的root_id始终指向知识库ID
       url: '',
@@ -808,16 +844,20 @@ const createFolder = async () => {
     
     const response = await createWiki(params)
     console.log('创建文件夹响应:', response)
+    const code = getVal((response as any)?.code ?? (response as any)?.data?.code)
+    const msg  = getVal((response as any)?.msg  ?? (response as any)?.data?.msg)
+    console.log('响应数据详情:', { code, msg })
+ 
+    alert('创建成功')
+    showCreateFolderModal.value = false
+    folderForm.value.title = ''
+    await loadWikiStructure()
     
-    if (response.code === 1000) {
-      showCreateFolderModal.value = false
-      folderForm.value.title = ''
-      await loadWikiStructure()
-    } else {
-      console.error('创建文件夹失败:', response.msg)
-    }
   } catch (error) {
     console.error('创建文件夹失败:', error)
+    alert('创建失败，请检查网络或稍后再试')
+  } finally {
+    creatingFolder.value = false
   }
 }
 

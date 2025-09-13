@@ -33,8 +33,7 @@ const routes = [
   {
     path: '/resume/:id',
     name: 'ResumeDetail',
-    // 统一跳转到工具页预览/编辑，保留原详情页路由名避免破坏引用
-    redirect: to => ({ path: '/resume/tool', query: { id: to.params.id } })
+    component: () => import('../views/resume/Detail.vue')
   },
   {
     path: '/resume/edit/:id',
@@ -45,6 +44,16 @@ const routes = [
     path: '/resume/tool',
     name: 'ResumeTool',
     component: () => import('../views/resume/Tool.vue')
+  },
+  {
+    path: '/resume/canvas-test',
+    name: 'ResumeCanvasTest',
+    component: () => import('../views/resume/CanvasTest.vue')
+  },
+  {
+    path: '/resume/detail-test',
+    name: 'ResumeDetailTest',
+    component: () => import('../views/resume/DetailTest.vue')
   },
   {
     path: '/interview',

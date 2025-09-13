@@ -81,7 +81,7 @@ console.log('🛣️ 当前路由:', route.path)
 onMounted(() => {
   console.log('🎯 App.vue 组件已挂载')
   console.log('🌐 当前URL:', window.location.href)
-  console.log('📁 基础路径:', import.meta.env.BASE_URL)
+  console.log('📁 基础路径:', (import.meta as any).env?.BASE_URL || '/')
 })
 
 // 是否显示header（除了登录页面都显示）

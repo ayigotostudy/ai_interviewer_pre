@@ -84,6 +84,22 @@
               </div>
             </div>
             
+            <!-- 绑定知识库（可选） -->
+            <div class="form-group">
+              <label>绑定知识库（可选）</label>
+              <div style="display:flex; align-items:center; gap: 0.75rem;">
+                <input
+                  type="text"
+                  :value="displaySelectedWikiName"
+                  placeholder="未绑定"
+                  readonly
+                  style="flex:1;"
+                />
+                <button type="button" class="submit-btn" @click="openWikiSelector">选择</button>
+                <button type="button" class="cancel-btn" @click="clearWiki">清除</button>
+              </div>
+              <p class="help" style="margin-top: 0.5rem; color:#6B7280; font-size:12px;">不选择则默认以未绑定方式创建（wiki_id=0）。</p>
+            </div>
 
             
             <div class="form-actions">
@@ -96,6 +112,30 @@
               </button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- 知识库选择弹窗 -->
+      <div v-if="showWikiSelector" class="create-form-overlay">
+        <div class="create-form-modal">
+          <div class="modal-header">
+            <h3>选择知识库</h3>
+            <button class="close-btn" @click="cancelWikiSelect">×</button>
+          </div>
+          <div class="create-form" style="padding-top: 0;">
+            <div v-if="userWikis.length === 0" style="padding:1rem; color:#6B7280;">暂无可用知识库，将以未绑定方式创建。</div>
+            <div v-else class="form-group">
+              <label>我的知识库</label>
+              <select v-model="selectedWikiId">
+                <option :value="0">不绑定</option>
+                <option v-for="w in userWikis" :key="w.ID" :value="w.ID">{{ cleanTitle(w.title) }}（ID: {{ w.ID }}）</option>
+              </select>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="cancel-btn" @click="cancelWikiSelect">取消</button>
+              <button type="button" class="submit-btn" @click="confirmWikiSelect">确定</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -232,19 +272,75 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { createMeeting, getMeetingList, updateMeeting, deleteMeeting } from '@/service/meeting'
+import { getWikiList, WikiType, type WikiItem } from '@/service/wiki'
 
 const router = useRouter()
 
 // 创建表单
 const showCreateForm = ref(false)
 const creating = ref(false)
+const showWikiSelector = ref(false)
 const interviewForm = ref({
   candidate: '',
   position: '',
   job_description: '',
   time: '',
-  duration: '60'
+  duration: '60',
+  wiki_id: 0
 })
+
+// 知识库选择
+const userWikis = ref<WikiItem[]>([])
+const selectedWikiId = ref<number>(0)
+const displaySelectedWikiName = computed(() => {
+  if (!interviewForm.value.wiki_id) return '未绑定'
+  const found = userWikis.value.find(w => w.ID === interviewForm.value.wiki_id)
+  return found ? cleanTitle(found.title) : `ID: ${interviewForm.value.wiki_id}`
+})
+
+const cleanTitle = (t: string) => {
+  if (!t) return ''
+  const s = t.trim()
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith('“') && s.endsWith('”'))) {
+    return s.slice(1, -1)
+  }
+  return s
+}
+
+const openWikiSelector = async () => {
+  try {
+    const res = await getWikiList()
+    if (res.code === 1000 && Array.isArray(res.data)) {
+      userWikis.value = res.data.filter(w => w.type === WikiType.KNOWLEDGE_BASE)
+    } else {
+      userWikis.value = []
+    }
+  } catch (e) {
+    userWikis.value = []
+  }
+  if (userWikis.value.length === 0) {
+    selectedWikiId.value = 0
+    interviewForm.value.wiki_id = 0
+    showWikiSelector.value = false
+    alert('当前无可用知识库，将以未绑定方式创建（wiki_id=0）')
+  } else {
+    selectedWikiId.value = interviewForm.value.wiki_id || 0
+    showWikiSelector.value = true
+  }
+}
+
+const confirmWikiSelect = () => {
+  interviewForm.value.wiki_id = selectedWikiId.value || 0
+  showWikiSelector.value = false
+}
+
+const cancelWikiSelect = () => {
+  showWikiSelector.value = false
+}
+
+const clearWiki = () => {
+  interviewForm.value.wiki_id = 0
+}
 
 // 搜索和筛选
 const searchQuery = ref('')
@@ -309,7 +405,8 @@ const createInterview = async () => {
       position: interviewForm.value.position,
       job_description: interviewForm.value.job_description,
       time: new Date(interviewForm.value.time).getTime() / 1000,
-      status: 'planned'
+      status: 'planned',
+      wiki_id: interviewForm.value.wiki_id || 0
     }
 
     await createMeeting(interviewData)
@@ -322,7 +419,8 @@ const createInterview = async () => {
       position: '',
       job_description: '',
       time: '',
-      duration: '60'
+      duration: '60',
+      wiki_id: 0
     }
     
     // 重新加载数据
@@ -441,6 +539,8 @@ const loadInterviews = async () => {
         // 直接访问 response.data.data，因为这是面试数组
         interviews.value = response.data.data
         console.log('面试数据:', interviews.value)
+        console.log('第一个面试的状态:', interviews.value[0]?.status)
+        console.log('第一个面试的完整数据:', interviews.value[0])
         filterInterviews()
       } else {
         console.error('获取面试列表失败: 数据结构不正确', response)

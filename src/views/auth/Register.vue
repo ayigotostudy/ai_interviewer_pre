@@ -136,7 +136,10 @@ const sendVerifyCode = async () => {
 
   try {
     const response = await getAuthCode(form.value.email)
-    console.log(response)
+    console.log('发送验证码响应:', response)
+    console.log('响应码:', response.data.code, '类型:', typeof response.data.code)
+    console.log('响应消息:', response.data.msg)
+    
     if (response.data.code === 1000 || response.data.code === '1000') {
       success.value = '验证码已发送，请查收邮件'
       step.value = 2

@@ -6,92 +6,156 @@
           <span class="icon">←</span>
           返回
         </button>
-        <h1>简历详情</h1>
+        <h1>{{ isEditing ? '编辑简历' : '简历详情' }}</h1>
         <div class="header-actions">
-          <button class="edit-btn" @click="editResume">
-            <span class="icon">✏️</span>
-            编辑
+          <button class="mode-switch-btn" @click="toggleEditMode">
+            {{ isEditing ? '预览模式' : '编辑模式' }}
           </button>
-          <button class="download-btn" @click="downloadResume">
-            <span class="icon">⬇️</span>
-            下载
+          <button class="export-btn" @click="exportToPDF" :disabled="exporting">
+            <span v-if="exporting" class="loading-spinner"></span>
+            {{ exporting ? '导出中...' : '导出PDF' }}
+          </button>
+          <button class="export-word-btn" @click="exportToWord" :disabled="exporting">
+            <span v-if="exporting" class="loading-spinner"></span>
+            {{ exporting ? '导出中...' : '导出Word' }}
+          </button>
+          <button class="save-btn" @click="saveResume" :disabled="saving" v-if="isEditing">
+            <span v-if="saving" class="loading-spinner"></span>
+            {{ saving ? '保存中...' : '保存简历' }}
           </button>
         </div>
       </div>
     </div>
 
     <div class="resume-content">
-      <div class="resume-preview">
-        <div class="resume-header-preview">
-          <h2>{{ resume.name || '未命名简历' }}</h2>
-          <div class="template-badge">
-            模板：{{ getTemplateName(resume.template_id) }}
+      <!-- 编辑模式 -->
+      <div v-if="isEditing" class="editor-container">
+        <!-- Markdown编辑器区域 -->
+        <div class="markdown-editor-area">
+          <div class="editor-form">
+            <div class="form-section">
+              <h3>内容（Markdown）</h3>
+              <div class="form-group">
+                <textarea 
+                  v-model="resume.content"
+                  placeholder="# 标题、## 分区、- 列表 等支持实时预览
+
+支持 ::: 区块语法：
+::: start
+**公司名称**
+**职位名称**
+**时间**
+::: end
+
+支持技术栈标签：
+技术栈：Vue.js, React, Node.js, Python
+
+支持关键词高亮：985、211等关键词会自动高亮"
+                  class="markdown-textarea"
+                ></textarea>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="resume-content-preview">
-          <ResumeShow :content="resume.content" />
+        <!-- 实时预览区域 -->
+        <div class="resume-preview">
+          <div class="preview-header">
+            <h3>实时预览（增强版）</h3>
+            <div class="preview-controls">
+              <div class="zoom-controls">
+                <button class="zoom-btn" @click="zoomOut" :disabled="zoomLevel <= 0.5">-</button>
+                <span class="zoom-level">{{ Math.round(zoomLevel * 100) }}%</span>
+                <button class="zoom-btn" @click="zoomIn" :disabled="zoomLevel >= 2">+</button>
+                <button class="zoom-reset-btn" @click="resetZoom">重置</button>
+              </div>
+              <div class="template-badge">
+                模板：{{ getTemplateName(resume.template_id) }}
+              </div>
+            </div>
+          </div>
+          <div class="preview-content" :style="{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }">
+            <div id="resume-preview" class="resume-container" v-html="enhancedMarkdownPreview"></div>
+          </div>
         </div>
       </div>
 
-      <div class="resume-sidebar">
-        <div class="sidebar-section">
-          <h4>简历信息</h4>
-          <div class="info-item">
-            <span class="label">创建时间：</span>
-            <span class="value">{{ formatTime(resume.CreatedAt) }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">最后更新：</span>
-            <span class="value">{{ formatTime(resume.UpdatedAt) }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">状态：</span>
-            <span class="value status-badge" :class="getStatusClass(resume.status)">
-              {{ getStatusText(resume.status) }}
-            </span>
-          </div>
-        </div>
-
-        <div class="sidebar-section">
-          <h4>快捷操作</h4>
-          <button class="action-btn primary" @click="useForInterview">
-            <span class="icon">🎯</span>
-            用于面试
-          </button>
-          <button class="action-btn secondary" @click="duplicateResume">
-            <span class="icon">📋</span>
-            复制简历
-          </button>
-          <button class="action-btn export" @click="exportToPDF" :disabled="exporting">
-            <span v-if="exporting" class="loading-spinner"></span>
-            <span v-else class="icon">📄</span>
-            {{ exporting ? '导出中...' : '导出PDF' }}
-          </button>
-          <button class="action-btn danger" 
-                  @click="deleteResume"
-                  :disabled="isDeleting">
-            <span v-if="isDeleting" class="loading-spinner"></span>
-            <span v-else class="icon">🗑️</span>
-            {{ isDeleting ? '删除中...' : '删除简历' }}
-          </button>
-        </div>
-
-        <div class="sidebar-section">
-          <h4>相关面试</h4>
-          <div v-if="relatedInterviews.length > 0">
-            <div v-for="interview in relatedInterviews" :key="interview.id" class="interview-item">
-              <div class="interview-header">
-                <h5>{{ interview.candidate }}</h5>
-                <span class="interview-status" :class="getInterviewStatusClass(interview.status)">
-                  {{ getInterviewStatusText(interview.status) }}
-                </span>
+      <!-- 预览模式 -->
+      <div v-else class="preview-container">
+        <div class="resume-preview">
+          <div class="preview-header">
+            <h3>简历预览</h3>
+            <div class="preview-controls">
+              <div class="zoom-controls">
+                <button class="zoom-btn" @click="zoomOut" :disabled="zoomLevel <= 0.5">-</button>
+                <span class="zoom-level">{{ Math.round(zoomLevel * 100) }}%</span>
+                <button class="zoom-btn" @click="zoomIn" :disabled="zoomLevel >= 2">+</button>
+                <button class="zoom-reset-btn" @click="resetZoom">重置</button>
               </div>
-              <p class="interview-position">{{ interview.position }}</p>
-              <p class="interview-time">{{ formatTime(interview.time) }}</p>
+              <div class="template-badge">
+                模板：{{ getTemplateName(resume.template_id) }}
+              </div>
             </div>
           </div>
-          <p v-else class="no-data">暂无相关面试</p>
+          <div class="preview-content" :style="{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }">
+            <div id="resume-preview" class="resume-container" v-html="enhancedMarkdownPreview"></div>
+          </div>
+        </div>
+
+        <div class="resume-sidebar">
+          <div class="sidebar-section">
+            <h4>简历信息</h4>
+            <div class="info-item">
+              <span class="label">创建时间：</span>
+              <span class="value">{{ formatTime(resume.CreatedAt) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">最后更新：</span>
+              <span class="value">{{ formatTime(resume.UpdatedAt) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">状态：</span>
+              <span class="value status-badge" :class="getStatusClass(resume.status)">
+                {{ getStatusText(resume.status) }}
+              </span>
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <h4>快捷操作</h4>
+            <button class="action-btn primary" @click="useForInterview">
+              <span class="icon">🎯</span>
+              用于面试
+            </button>
+            <button class="action-btn secondary" @click="duplicateResume">
+              <span class="icon">📋</span>
+              复制简历
+            </button>
+            <button class="action-btn danger" 
+                    @click="deleteResume"
+                    :disabled="isDeleting">
+              <span v-if="isDeleting" class="loading-spinner"></span>
+              <span v-else class="icon">🗑️</span>
+              {{ isDeleting ? '删除中...' : '删除简历' }}
+            </button>
+          </div>
+
+          <div class="sidebar-section">
+            <h4>相关面试</h4>
+            <div v-if="relatedInterviews.length > 0">
+              <div v-for="interview in relatedInterviews" :key="interview.id" class="interview-item">
+                <div class="interview-header">
+                  <h5>{{ interview.candidate }}</h5>
+                  <span class="interview-status" :class="getInterviewStatusClass(interview.status)">
+                    {{ getInterviewStatusText(interview.status) }}
+                  </span>
+                </div>
+                <p class="interview-position">{{ interview.position }}</p>
+                <p class="interview-time">{{ formatTime(interview.time) }}</p>
+              </div>
+            </div>
+            <p v-else class="no-data">暂无相关面试</p>
+          </div>
         </div>
       </div>
     </div>
@@ -99,10 +163,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getResumeDetail, deleteResume as deleteResumeAPI, type ResumeDetailResponse } from '@/service/resume'
-import ResumeShow from '@/components/ResumeShow.vue'
+import { getResumeDetail, deleteResume as deleteResumeAPI, updateResume, type ResumeDetailResponse } from '@/service/resume'
+import { EnhancedMarkdownParser } from '@/utils/MarkdownParser'
+import { PDFExportService } from '@/services/PDFExportService'
 
 const router = useRouter()
 const route = useRoute()
@@ -122,6 +187,9 @@ const resume = ref<ResumeDetailResponse>({
 const relatedInterviews = ref<any[]>([])
 const isDeleting = ref(false) // 添加删除状态
 const exporting = ref(false) // 添加导出状态
+const saving = ref(false) // 添加保存状态
+const isEditing = ref(false) // 编辑模式状态
+const zoomLevel = ref(1) // 缩放级别
 
 // 模板名称映射
 const templateNames: { [key: number]: string } = {
@@ -179,18 +247,108 @@ const formatTime = (timestamp: string) => {
   return date.toLocaleString('zh-CN')
 }
 
+// 增强的Markdown预览
+const enhancedMarkdownPreview = computed(() => {
+  let content = resume.value.content || ''
+  
+  // 如果内容为空，显示示例内容
+  if (!content.trim()) {
+    content = `# 张三
+男 | 25岁 | 前端开发工程师 | 本科 | 138-0000-0000 | zhangsan@example.com
+
+## 自我评价
+具有3年前端开发经验，熟练掌握Vue、React等主流框架，具备良好的团队协作能力和学习能力。
+
+## 工作经历
+::: start
+**ABC科技有限公司**
+**前端开发工程师**
+**2021年6月 - 2024年12月**
+::: end
+负责公司核心产品的前端开发工作，使用Vue.js框架开发用户界面，参与产品需求分析和技术方案设计。
+
+::: start
+**XYZ互联网公司**
+**前端实习生**
+**2020年7月 - 2021年5月**
+::: end
+参与多个项目的前端开发，学习并掌握了现代前端开发技术栈。
+
+## 项目经历
+::: start
+**电商管理系统**
+**前端负责人**
+**负责开发电商后台管理系统，包括商品管理、订单管理、用户管理等功能模块。**
+**2022年3月 - 2023年8月**
+::: end
+使用Vue3 + TypeScript + Element Plus技术栈，实现了响应式设计和组件化开发，提升了开发效率和用户体验。
+
+## 专业技能
+- 精通：JavaScript, TypeScript, Vue.js, React
+- 熟悉：Node.js, Webpack, Vite, Git
+- 了解：Python, Java, 数据库设计
+
+## 教育背景
+::: start
+**北京大学**
+**计算机科学与技术 | 本科**
+**2016年9月 - 2020年6月**
+::: end
+主修课程：数据结构、算法设计、软件工程、数据库原理等。`
+  }
+  
+  return EnhancedMarkdownParser.parse(content)
+})
+
+// 切换编辑模式
+const toggleEditMode = () => {
+  isEditing.value = !isEditing.value
+}
+
+// 缩放控制方法
+const zoomIn = () => {
+  if (zoomLevel.value < 2) {
+    zoomLevel.value = Math.min(2, zoomLevel.value + 0.1)
+  }
+}
+
+const zoomOut = () => {
+  if (zoomLevel.value > 0.5) {
+    zoomLevel.value = Math.max(0.5, zoomLevel.value - 0.1)
+  }
+}
+
+const resetZoom = () => {
+  zoomLevel.value = 1
+}
+
+// 保存简历
+const saveResume = async () => {
+  saving.value = true
+  
+  try {
+    const data = {
+      name: resume.value.name,
+      content: resume.value.content,
+      template_id: resume.value.template_id,
+      status: resume.value.status.toString()
+    }
+
+    await updateResume(parseInt(route.params.id as string), data)
+    alert('简历保存成功！')
+    isEditing.value = false
+  } catch (error) {
+    console.error('保存失败:', error)
+    alert('保存失败，请重试')
+  } finally {
+    saving.value = false
+  }
+}
+
 const goBack = () => {
   router.go(-1)
 }
 
-const editResume = () => {
-  router.push(`/resume/edit/${route.params.id}`)
-}
-
-const downloadResume = () => {
-  // 这里实现下载功能
-  alert('下载功能开发中...')
-}
 
 const useForInterview = () => {
   router.push('/interview')
@@ -205,38 +363,27 @@ const exportToPDF = async () => {
   exporting.value = true
   
   try {
-    // 使用html2pdf.js库导出PDF
-    const element = document.querySelector('.resume-content-preview')
-    if (!element) {
-      throw new Error('找不到简历内容')
-    }
-    
-    // 动态导入html2pdf.js
-    const html2pdf = await import('html2pdf.js')
-    
-    const opt = {
-      margin: [10, 10, 10, 10],
-      filename: `${resume.value.name || '我的简历'}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2,
-        useCORS: true,
-        letterRendering: true
-      },
-      jsPDF: { 
-        unit: 'mm', 
-        format: 'a4', 
-        orientation: 'portrait' 
-      }
-    }
-    
-    // @ts-ignore
-    await html2pdf.default().from(element).set(opt).save()
-    
+    const filename = resume.value.name || 'resume'
+    await PDFExportService.exportResumePreviewWithPuppeteer(filename)
     alert('PDF导出成功！')
   } catch (error) {
     console.error('PDF导出失败:', error)
     alert('PDF导出失败，请重试')
+  } finally {
+    exporting.value = false
+  }
+}
+
+const exportToWord = async () => {
+  exporting.value = true
+  
+  try {
+    const filename = resume.value.name || 'resume'
+    await PDFExportService.exportResumePreviewToWord(filename)
+    alert('Word导出成功！')
+  } catch (error) {
+    console.error('Word导出失败:', error)
+    alert('Word导出失败，请重试')
   } finally {
     exporting.value = false
   }
@@ -389,8 +536,6 @@ const loadRelatedInterviews = async () => {
 }
 
 onMounted(() => {
-  console.log('简历详情页面加载，路由参数:', route.params)
-  console.log('简历ID:', route.params.id)
   loadResumeDetail()
   loadRelatedInterviews()
 })
@@ -447,7 +592,7 @@ onMounted(() => {
   gap: 1rem;
 }
 
-.edit-btn, .download-btn {
+.mode-switch-btn, .export-btn, .export-word-btn, .save-btn {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 10px;
@@ -460,31 +605,204 @@ onMounted(() => {
   transition: all 0.3s ease;
 }
 
-.edit-btn {
+.mode-switch-btn {
   background: #FEF3C7;
   color: #D97706;
 }
 
-.edit-btn:hover {
+.mode-switch-btn:hover {
   background: #FDE68A;
 }
 
-.download-btn {
+.export-btn {
   background: #DBEAFE;
   color: #1E40AF;
 }
 
-.download-btn:hover {
+.export-btn:hover {
   background: #BFDBFE;
+}
+
+.export-word-btn {
+  background: #E0F2FE;
+  color: #1E40AF;
+}
+
+.export-word-btn:hover {
+  background: #C6EAFE;
+}
+
+.save-btn {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.save-btn:hover {
+  background: #A7F3D0;
 }
 
 .resume-content {
   max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
+}
+
+/* 编辑模式布局 */
+.editor-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  height: calc(100vh - 200px);
+}
+
+.markdown-editor-area {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1F2937;
+  border-bottom: 2px solid #E5E7EB;
+  padding-bottom: 0.5rem;
+}
+
+.form-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.markdown-textarea {
+  flex: 1;
+  width: 100%;
+  border: 2px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 1rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.markdown-textarea:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.markdown-textarea::placeholder {
+  color: #9CA3AF;
+  font-style: italic;
+}
+
+/* 预览模式布局 */
+.preview-container {
   display: grid;
   grid-template-columns: 1fr 350px;
   gap: 2rem;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #E5E7EB;
+}
+
+.preview-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.preview-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8f9fa;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.zoom-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #dee2e6;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  color: #495057;
+  transition: all 0.2s ease;
+}
+
+.zoom-btn:hover:not(:disabled) {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.zoom-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.zoom-level {
+  font-size: 12px;
+  font-weight: 500;
+  color: #495057;
+  min-width: 40px;
+  text-align: center;
+}
+
+.zoom-reset-btn {
+  padding: 4px 8px;
+  border: 1px solid #dee2e6;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #495057;
+  transition: all 0.2s ease;
+}
+
+.zoom-reset-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.preview-content {
+  flex: 1;
+  overflow: auto;
+  min-height: 600px;
+  position: relative;
 }
 
 .resume-preview {
@@ -494,19 +812,6 @@ onMounted(() => {
   padding: 2rem;
 }
 
-.resume-header-preview {
-  text-align: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 2px solid #374151;
-}
-
-.resume-header-preview h2 {
-  margin: 0 0 1rem 0;
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #1F2937;
-}
 
 .template-badge {
   display: inline-block;
@@ -518,10 +823,6 @@ onMounted(() => {
   font-weight: 500;
 }
 
-.resume-content-preview {
-  font-size: 1rem;
-  line-height: 1.6;
-}
 
 .resume-sidebar {
   display: flex;
@@ -751,6 +1052,176 @@ onMounted(() => {
   }
 }
 
+/* 简洁专业的简历样式 */
+:deep(.resume-container) {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 40px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  border-radius: 10px;
+}
+
+:deep(.resume-container h1) {
+  color: #1e40af;
+  font-size: 32px;
+  margin-bottom: 20px;
+  border-bottom: 3px solid #1e40af;
+  padding-bottom: 10px;
+  font-weight: bold;
+  text-align: center;
+}
+
+:deep(.resume-container h2) {
+  color: #1e40af;
+  font-size: 18px;
+  margin-top: 30px;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #1e40af;
+  padding-bottom: 5px;
+  font-weight: bold;
+}
+
+:deep(.resume-container .contact-info) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 25px;
+  justify-content: center;
+}
+
+:deep(.resume-container .contact-item) {
+  font-size: 14px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+:deep(.resume-container .experience-header) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+:deep(.resume-container .experience-header.one-item) {
+  justify-content: flex-start;
+}
+
+:deep(.resume-container .experience-header.two-items) {
+  justify-content: space-between;
+}
+
+:deep(.resume-container .experience-header.three-items) {
+  justify-content: space-between;
+}
+
+:deep(.resume-container .experience-line) {
+  flex: 0 0 auto;
+}
+
+:deep(.resume-container .experience-line.company) {
+  font-weight: bold;
+  font-size: 15px;
+  color: #000;
+  text-align: left;
+  margin-right: auto;
+}
+
+:deep(.resume-container .experience-line.position) {
+  font-weight: bold;
+  font-size: 13px;
+  color: #374151;
+  text-align: center;
+}
+
+:deep(.resume-container .experience-line.duration) {
+  font-weight: bold;
+  font-size: 11px;
+  color: #6b7280;
+  text-align: right;
+  margin-left: auto;
+}
+
+:deep(.resume-container .tech-stack-section) {
+  margin: 15px 0;
+}
+
+:deep(.resume-container .tech-tags) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+:deep(.resume-container .tech-tag) {
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+:deep(.resume-container ul) {
+  margin: 8px 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+:deep(.resume-container li) {
+  margin: 4px 0;
+  position: relative;
+  padding-left: 16px;
+}
+
+:deep(.resume-container li::before) {
+  content: "•";
+  color: #1e40af;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+:deep(.resume-container strong) {
+  font-weight: bold;
+}
+
+:deep(.resume-container .description) {
+  margin-top: 8px;
+  line-height: 1.5;
+  font-size: 14px;
+  color: #374151;
+}
+
+:deep(.resume-container .highlight-keyword) {
+  background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+@media (max-width: 1024px) {
+  .editor-container {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  
+  .preview-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .resume-sidebar {
+    order: -1;
+  }
+}
+
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
@@ -763,7 +1234,7 @@ onMounted(() => {
     width: 100%;
   }
   
-  .edit-btn, .download-btn {
+  .mode-switch-btn, .export-btn, .export-word-btn, .save-btn {
     width: 100%;
   }
   
@@ -775,8 +1246,38 @@ onMounted(() => {
     padding: 1.5rem;
   }
   
-  .resume-header-preview h2 {
-    font-size: 2rem;
+  .editor-container {
+    gap: 1rem;
+  }
+  
+  .markdown-editor-area {
+    padding: 1rem;
+  }
+  
+  .preview-controls {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+  }
+  
+  .zoom-controls {
+    padding: 0.25rem;
+  }
+  
+  .zoom-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+  
+  .zoom-level {
+    font-size: 11px;
+    min-width: 35px;
+  }
+  
+  .zoom-reset-btn {
+    padding: 2px 6px;
+    font-size: 10px;
   }
 }
 </style>

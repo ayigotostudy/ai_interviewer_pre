@@ -27,6 +27,8 @@ export interface CreateMeetingParams {
   job_description: string;
   time: number;
   status: string;
+  // 绑定的知识库ID；无则为0
+  wiki_id?: number;
 }
 
 export interface UpdateMeetingParams {

@@ -8,7 +8,7 @@
         <p class="page-subtitle">构建你的专属知识体系</p>
       </div>
       <div class="header-right">
-        <button class="btn btn-primary" @click="showCreateModal = true">
+        <button class="btn btn-primary" @click="openCreateBaseModal">
           <i class="icon">📚</i>
           新建知识库
         </button>
@@ -133,9 +133,9 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="showCreateModal = false">取消</button>
-          <button class="btn btn-primary" @click="createKnowledgeBase" :disabled="!newWiki.title">
-            创建
+          <button class="btn btn-secondary" @click="showCreateModal = false" :disabled="creatingBase">取消</button>
+          <button class="btn btn-primary" @click="createKnowledgeBase" :disabled="!newWiki.title || creatingBase">
+            {{ creatingBase ? '创建中...' : '创建' }}
           </button>
         </div>
       </div>
@@ -202,6 +202,11 @@ const newWiki = ref({
   title: '',
   description: ''
 })
+const creatingBase = ref(false)
+const openCreateBaseModal = () => {
+  creatingBase.value = false
+  showCreateModal.value = true
+}
 
 // 计算属性 - 只显示知识库（type=0，parent_id=0）
 const knowledgeBases = computed(() => {
@@ -222,6 +227,7 @@ const cleanTitle = (title: string) => {
 const loadWikiList = async () => {
   isLoading.value = true
   try {
+    creatingBase.value = true
     console.log('开始加载知识库列表...')
     const response = await getWikiList()
     console.log('API响应:', response)
@@ -355,20 +361,26 @@ const createKnowledgeBase = async () => {
       url: '',
       type: '0' // type=0表示知识库
     }
-    
+
     console.log('创建知识库参数:', params)
     const response = await createWiki(params)
     console.log('创建知识库响应:', response)
+    const getVal = (v: any) => (v && typeof v === 'object' && 'value' in v) ? v.value : v
+    const code = getVal((response as any)?.code ?? (response as any)?.data?.code)
+    const msg  = getVal((response as any)?.msg  ?? (response as any)?.data?.msg)
+    console.log('响应数据详情:', { code, msg })
     
-    if (response.code === 1000) {
-      showCreateModal.value = false
-      newWiki.value = { title: '', description: '' }
-      await loadWikiList()
-    } else {
-      console.error('创建知识库失败:', response.msg)
-    }
+
+    alert('创建成功')
+    showCreateModal.value = false
+    newWiki.value = { title: '', description: '' }
+    await loadWikiList()
+
   } catch (error) {
     console.error('创建知识库失败:', error)
+    alert('创建失败，请检查网络或稍后再试')
+  } finally {
+    creatingBase.value = false
   }
 }
 
