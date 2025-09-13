@@ -14,8 +14,8 @@
     </div>
 
       <div class="header-right">
-        <div class="interview-status" :class="getStatusClass(interview.status)">
-          {{ getStatusText(interview.status) }}
+        <div class="interview-status" :class="getStatusClass(interview.status || 'planned')">
+          {{ getStatusText(interview.status || 'planned') }}
           </div>
         <button class="info-toggle-btn" @click="toggleInterviewInfo" :class="{ 'active': !isInterviewInfoCollapsed }">
           <span class="icon">ℹ️</span>
@@ -158,24 +158,6 @@
           </div>
     </div>
 
-        <!-- 可伸缩的简历侧边栏 -->
-        <div class="resume-sidebar" :class="{ 'collapsed': isResumeCollapsed }">
-          <div class="sidebar-header">
-            <h3>简历预览</h3>
-            <button @click="toggleResumeSidebar" class="toggle-btn" :title="isResumeCollapsed ? '展开简历' : '收起简历'">
-              <span class="icon">{{ isResumeCollapsed ? '▶' : '◀' }}</span>
-            </button>
-          </div>
-
-          <div class="sidebar-content" v-show="!isResumeCollapsed">
-            <div v-if="resume.content" class="resume-content">
-              <div class="markdown-content" v-html="renderMarkdown(resume.content)"></div>
-            </div>
-            <div v-else class="no-resume">
-              <p>暂无简历内容</p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -290,7 +272,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getMeetingDetail, uploadResume, updateMeeting } from '@/service/meeting'
 import { getResumeDetail, getResumeList, type ResumeListItem } from '@/service/resume'
@@ -396,6 +378,7 @@ const slideDownInput = () => {
 const goBack = () => {
   router.back();
 };
+
 
 const sendMessage = async () => {
   if (!inputMessage.value.trim() || isSubmitting.value) return
@@ -1216,63 +1199,6 @@ const showAllEvaluations = () => {
 
 
 
-// 渲染Markdown
-const renderMarkdown = (markdown: string): string => {
-  if (!markdown) return ''
-  
-  // 简单的Markdown转HTML转换
-  let html = markdown
-    // 处理 ::: start ... ::: end 块
-    .replace(/:::\s*start\s*\n*([\s\S]*?)\n*:::\s*end/g, (match, content) => {
-      const lines = content.trim().split('\n').filter((line: string) => line.trim())
-      const formattedContent = lines.map((line: string) => `<div class="highlight-line">${line.trim()}</div>`).join('')
-      return `<div class="highlight-block">${formattedContent}</div>`
-    })
-    // 处理单独的 ::: 符号（作为分隔符）
-    .replace(/:::/g, '<span class="highlight-symbol">:::</span>')
-    // 标题
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    // 粗体
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    // 斜体
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    // 代码块
-    .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-    // 行内代码
-    .replace(/`(.*?)`/g, '<code>$1</code>')
-    // 链接
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
-    // 列表
-    .replace(/^\* (.*$)/gim, '<li>$1</li>')
-    .replace(/^- (.*$)/gim, '<li>$1</li>')
-    // 处理基本信息行（用 | 分隔的信息）
-    .replace(/^([^#\n]+)\|([^#\n]+)\|([^#\n]+)\|([^#\n]+)\|([^#\n]+)\|([^#\n]+)$/gm, (match, p1, p2, p3, p4, p5, p6) => {
-      return `<div class="basic-info-line">
-        <span class="info-item">${p1.trim()}</span>
-        <span class="info-separator">|</span>
-        <span class="info-item">${p2.trim()}</span>
-        <span class="info-separator">|</span>
-        <span class="info-item">${p3.trim()}</span>
-        <span class="info-separator">|</span>
-        <span class="info-item">${p4.trim()}</span>
-        <span class="info-separator">|</span>
-        <span class="info-item">${p5.trim()}</span>
-        <span class="info-separator">|</span>
-        <span class="info-item">${p6.trim()}</span>
-      </div>`
-    })
-    // 段落
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/^(?!<[h|u|o|p|d|b|d])(.*$)/gim, '<p>$1</p>')
-    // 清理多余的p标签
-    .replace(/<p><\/p>/g, '')
-    .replace(/<p><p>/g, '<p>')
-    .replace(/<\/p><\/p>/g, '</p>')
-  
-  return html
-}
 
 // 格式化时间
 const formatTime = (timestamp: number): string => {
@@ -1319,11 +1245,6 @@ const getStatusText = (status: string): string => {
   }
 }
 
-// 简历预览侧边栏状态
-const isResumeCollapsed = ref(false)
-const toggleResumeSidebar = () => {
-  isResumeCollapsed.value = !isResumeCollapsed.value
-}
 
 // 面试信息侧边栏状态
 const isInterviewInfoCollapsed = ref(true)
@@ -1468,6 +1389,7 @@ onUnmounted(() => {
   transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
+
 
 /* 主内容区域 */
 .room-content {
@@ -1868,277 +1790,8 @@ onUnmounted(() => {
   cursor: not-allowed;
 }
 
-/* 简历侧边栏 */
-.resume-sidebar {
-  width: 380px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-  min-height: 0;
-  flex-shrink: 0;
-}
 
-.resume-sidebar.collapsed {
-  width: 80px;
-}
 
-.resume-sidebar.collapsed .sidebar-content {
-  display: none;
-}
-
-.resume-sidebar.collapsed .sidebar-header h3 {
-  display: none;
-}
-
-.sidebar-header {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  padding: 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-  border-radius: 20px 20px 0 0;
-}
-
-.sidebar-header h3 {
-  margin: 0;
-  font-size: 1.4rem;
-  font-weight: 600;
-}
-
-.toggle-btn {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 0.5rem;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  height: 36px;
-  backdrop-filter: blur(10px);
-}
-
-.toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
-}
-
-.sidebar-content {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e0 #f1f5f9;
-  min-height: 0;
-}
-
-.sidebar-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.sidebar-content::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
-
-.sidebar-content::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
-  border-radius: 4px;
-}
-
-.sidebar-content::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0;
-}
-
-/* 简历内容样式优化 */
-.resume-content {
-  background: white;
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  height: 100%;
-  min-height: 100%;
-}
-
-.markdown-content {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  line-height: 1.7;
-  color: #2d3748;
-  height: 100%;
-  min-height: 100%;
-}
-
-.markdown-content h1 {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #1a202c;
-  margin: 0 0 1.5rem 0;
-  padding-bottom: 0.75rem;
-  border-bottom: 3px solid #667eea;
-}
-
-.markdown-content h2 {
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: #ea0202;
-  margin: 2rem 0 1rem 0;
-}
-
-.markdown-content h3 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #374151;
-  margin: 1.5rem 0 0.75rem 0;
-}
-
-.markdown-content p {
-  margin: 0 0 1rem 0;
-  line-height: 1.8;
-}
-
-.markdown-content strong {
-  font-weight: 600;
-  color: #1a202c;
-}
-
-.markdown-content em {
-  font-style: italic;
-  color: #6b7280;
-}
-
-.markdown-content code {
-  background: #f3f4f6;
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 0.9rem;
-  color: #dc2626;
-}
-
-.markdown-content pre {
-  background: #f8fafc;
-  padding: 1.5rem;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  overflow-x: auto;
-  margin: 1.5rem 0;
-}
-
-.markdown-content pre code {
-  background: none;
-  padding: 0;
-  color: #374151;
-}
-
-.markdown-content a {
-  color: #2563eb;
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.2s;
-}
-
-.markdown-content a:hover {
-  border-bottom-color: #2563eb;
-}
-
-.markdown-content li {
-  margin: 0.5rem 0;
-  line-height: 1.7;
-}
-
-/* 高亮块样式 */
-.markdown-content .highlight-block {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border: 1px solid #bae6fd;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin: 1.5rem 0;
-  position: relative;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.markdown-content .highlight-block::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
-  border-radius: 12px 12px 0 0;
-}
-
-.markdown-content .highlight-line {
-  padding: 0.75rem 0;
-  border-bottom: 1px solid rgba(186, 230, 253, 0.4);
-  font-weight: 500;
-  color: #1e40af;
-}
-
-.markdown-content .highlight-line:last-child {
-  border-bottom: none;
-}
-
-.markdown-content .basic-info-line {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  padding: 1rem 0;
-  margin: 1.5rem 0;
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 1rem 1.5rem;
-}
-
-.markdown-content .info-item {
-  color: #374151;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.markdown-content .info-separator {
-  color: #9ca3af;
-  font-weight: 300;
-  margin: 0 0.5rem;
-}
-
-.markdown-content .highlight-symbol {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  color: #92400e;
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-  font-weight: 600;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 0.9rem;
-  border: 1px solid #fbbf24;
-  display: inline-block;
-  margin: 0 0.25rem;
-}
-
-.no-resume {
-  text-align: center;
-  color: #6b7280;
-  font-style: italic;
-  padding: 3rem 1.5rem;
-  background: #f9fafb;
-  border-radius: 12px;
-  border: 2px dashed #d1d5db;
-}
 
 /* 动画效果 */
 @keyframes pulse {

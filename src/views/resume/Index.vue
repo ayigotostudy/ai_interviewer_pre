@@ -72,7 +72,7 @@
           
           <div class="card-content">
             <div class="resume-preview">
-              <ResumeShow :content="resume.content" />
+              <div class="resume-content" v-html="getEnhancedMarkdown(resume.content)"></div>
             </div>
           </div>
           
@@ -112,7 +112,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getResumeList, deleteResume as deleteResumeAPI, type ResumeListItem } from '@/service/resume'
-import ResumeShow from '@/components/ResumeShow.vue'
+import { EnhancedMarkdownParser } from '@/utils/MarkdownParser'
 
 const router = useRouter()
 
@@ -152,6 +152,15 @@ const getStatusText = (status: number) => {
     2: '已发布'
   }
   return statusTexts[status] || '草稿'
+}
+
+// 增强版Markdown渲染
+const getEnhancedMarkdown = (content: string): string => {
+  if (!content || !content.trim()) {
+    return '<div class="empty-content">暂无简历内容</div>'
+  }
+  
+  return EnhancedMarkdownParser.parse(content)
 }
 
 const filterResumes = () => {
@@ -543,6 +552,196 @@ Java, Spring Boot, MySQL, Redis, Docker`,
 .resume-preview {
   font-size: 0.85rem;
   line-height: 1.4;
+}
+
+/* 增强版Markdown样式 */
+.resume-content {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  color: #333;
+  max-width: 100%;
+}
+
+/* 主标题样式 */
+.resume-content .resume-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1a202c;
+  text-align: center;
+  margin: 0 0 1rem 0;
+  letter-spacing: 0.3px;
+}
+
+/* 章节标题样式 */
+.resume-content .section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2563eb;
+  margin: 1.5rem 0 0.75rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.25rem;
+}
+
+/* 联系方式样式 */
+.resume-content .contact-info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 6px;
+}
+
+.resume-content .contact-item {
+  font-size: 0.8rem;
+  color: #4a5568;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 技术栈样式 */
+.resume-content .tech-stack-section {
+  margin: 0.75rem 0;
+}
+
+.resume-content .tech-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.resume-content .tech-tag {
+  background: #e2e8f0;
+  color: #4a5568;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* 经验项目样式 */
+.resume-content .experience-item {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.resume-content .experience-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  gap: 0.75rem;
+}
+
+.resume-content .experience-line {
+  flex: 1;
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.8rem;
+}
+
+.resume-content .experience-line.company {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.resume-content .experience-line.position {
+  text-align: center;
+  color: #4b5563;
+}
+
+.resume-content .experience-line.duration {
+  text-align: right;
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+/* 描述文本样式 */
+.resume-content .description {
+  color: #4a5568;
+  line-height: 1.5;
+  margin: 0.25rem 0;
+  font-size: 0.8rem;
+}
+
+/* 关键词高亮 */
+.resume-content .highlight-keyword {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  padding: 0.0625rem 0.25rem;
+  border-radius: 0.125rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* 列表样式 */
+.resume-content ul {
+  margin: 0.5rem 0;
+  padding-left: 1rem;
+}
+
+.resume-content li {
+  margin: 0.25rem 0;
+  line-height: 1.4;
+  color: #4a5568;
+  font-size: 0.8rem;
+}
+
+/* 段落样式 */
+.resume-content p {
+  margin: 0.5rem 0;
+  line-height: 1.5;
+  color: #4a5568;
+  font-size: 0.8rem;
+}
+
+/* 粗体样式 */
+.resume-content strong {
+  font-weight: 700;
+  color: #1a202c;
+}
+
+/* 代码样式 */
+.resume-content code {
+  background: #f1f5f9;
+  padding: 0.0625rem 0.25rem;
+  border-radius: 0.125rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.75rem;
+  color: #dc2626;
+}
+
+.resume-content pre {
+  background: #f8fafc;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid #e2e8f0;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+}
+
+.resume-content pre code {
+  background: none;
+  padding: 0;
+  color: #374151;
+}
+
+/* 链接样式 */
+.resume-content a {
+  color: #2563eb;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.resume-content a:hover {
+  border-bottom-color: #2563eb;
 }
 
 .card-footer {

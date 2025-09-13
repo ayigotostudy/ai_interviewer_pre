@@ -5,14 +5,6 @@
         <button class="mode-switch-btn" @click="toggleMode">
           {{ isCanvasMode ? '切换到Markdown编辑' : '切换到Canvas编辑' }}
         </button>
-        <button class="export-btn" @click="exportToPDF" :disabled="exporting">
-          <span v-if="exporting" class="loading-spinner"></span>
-          {{ exporting ? '导出中...' : '导出PDF' }}
-        </button>
-        <button class="export-word-btn" @click="exportToWord" :disabled="exporting">
-          <span v-if="exporting" class="loading-spinner"></span>
-          {{ exporting ? '导出中...' : '导出Word' }}
-        </button>
         <button class="save-btn" @click="saveResume" :disabled="saving">
           <span v-if="saving" class="loading-spinner"></span>
           {{ saving ? '保存中...' : '保存简历' }}
@@ -107,7 +99,6 @@
               <button @click="addTextBlock" class="action-btn">添加文本</button>
               <button @click="addImageBlock" class="action-btn">添加图片</button>
               <button @click="addShapeBlock" class="action-btn">添加形状</button>
-              <button @click="exportToPDF" class="action-btn">导出图片</button>
             </div>
           </div>
 
@@ -195,10 +186,46 @@
 
       <!-- Markdown编辑器区域（增强版） -->
       <div v-else class="markdown-editor-area">
-        <div class="editor-form">
-          <div class="form-section">
-            <h3>内容（Markdown）</h3>
-            <div class="form-group">
+        <!-- 顶部工具栏 -->
+        <div class="editor-toolbar">
+          <div class="toolbar-controls">
+            <div class="control-group">
+              <label>预览字体大小</label>
+              <div class="control-input">
+                <input 
+                  type="range" 
+                  v-model="fontSize" 
+                  min="10" 
+                  max="24" 
+                  step="1"
+                  class="slider"
+                >
+                <span class="control-value">{{ fontSize }}px</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <label>预览行间距</label>
+              <div class="control-input">
+                <input 
+                  type="range" 
+                  v-model="lineHeight" 
+                  min="1.0" 
+                  max="3.0" 
+                  step="0.1"
+                  class="slider"
+                >
+                <span class="control-value">{{ lineHeight }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 两栏内容区域 -->
+        <div class="editor-content">
+          <div class="editor-form">
+            <div class="form-section">
+              <h3>内容（Markdown）</h3>
+              <div class="form-group">
               <textarea 
                 v-model="resumeData.content"
                 placeholder="# 标题、## 分区、- 列表 等支持实时预览
@@ -215,24 +242,30 @@
                 class="form-textarea"
                 rows="20"
               ></textarea>
-              <div class="form-help">
-                右侧实时预览，支持 Markdown 粗体、标题、列表等
-                <br>
-                <strong>新增：</strong>支持 ::: 区块语法，用于工作经历和项目经历的格式化显示
+                <div class="form-help">
+                  右侧实时预览，支持 Markdown 粗体、标题、列表等
+                  <br>
+                  <strong>新增：</strong>支持 ::: 区块语法，用于工作经历和项目经历的格式化显示
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="resume-preview">
-          <div class="preview-header">
-            <h3>实时预览（增强版）</h3>
-            <div class="template-badge">
-              模板：{{ getTemplateName(resumeData.template_id) }}
+          <div class="resume-preview">
+            <div class="preview-header">
+              <h3>实时预览（增强版）</h3>
+              <div class="template-badge">
+                模板：{{ getTemplateName(resumeData.template_id) }}
+              </div>
             </div>
-          </div>
-          <div class="preview-content">
-            <div id="resume-preview" class="resume-container" v-html="enhancedMarkdownPreview"></div>
+            <div class="preview-content">
+              <div 
+                id="resume-preview" 
+                class="resume-container dynamic-font" 
+                :style="{ fontSize: fontSize + 'px', lineHeight: lineHeight }"
+                v-html="enhancedMarkdownPreview"
+              ></div>
+            </div>
           </div>
         </div>
       </div>
@@ -246,7 +279,6 @@ import { ref, onMounted, nextTick, onUnmounted, watch, computed } from 'vue'
 import CanvasEditorTutorial from './CanvasEditorTutorial.vue'
 import { CanvasEditorService, type CanvasElement } from '@/services/CanvasEditorService'
 import { EnhancedMarkdownParser } from '@/utils/MarkdownParser'
-import { PDFExportService } from '@/services/PDFExportService'
 
 // Props
 const props = defineProps<{
@@ -266,7 +298,10 @@ const emit = defineEmits<{
 // 编辑器模式
 const isCanvasMode = ref(false)
 const saving = ref(false)
-const exporting = ref(false)
+
+// 字体调节
+const fontSize = ref(14) // 字体大小
+const lineHeight = ref(1.6) // 行间距
 
 // Canvas相关
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -552,96 +587,6 @@ const saveResume = async () => {
   }
 }
 
-// 导出为PDF
-const exportToPDF = async () => {
-  exporting.value = true
-  
-  try {
-    const filename = props.resumeData.name || 'resume'
-    
-    if (isCanvasMode.value) {
-      // 导出Canvas内容
-      if (canvasRef.value) {
-        await PDFExportService.exportCanvasToPDF('canvas-editor', filename)
-      } else {
-        throw new Error('Canvas未初始化')
-      }
-    } else {
-      // 导出Markdown预览内容
-      console.log('开始导出Markdown预览...')
-      
-      // 调试：检查预览元素
-      const previewElement = document.getElementById('resume-preview')
-      if (previewElement) {
-        console.log('预览元素找到:', previewElement)
-        console.log('元素尺寸:', {
-          width: previewElement.offsetWidth,
-          height: previewElement.offsetHeight,
-          scrollWidth: previewElement.scrollWidth,
-          scrollHeight: previewElement.scrollHeight
-        })
-        console.log('元素内容长度:', previewElement.innerHTML.length)
-      } else {
-        console.error('未找到预览元素 resume-preview')
-        throw new Error('未找到预览元素')
-      }
-      
-      await PDFExportService.exportResumePreviewWithPuppeteer(filename)
-    }
-    
-    console.log('PDF导出成功')
-    alert('PDF导出成功！')
-  } catch (error) {
-    console.error('PDF导出失败:', error)
-    alert(`PDF导出失败: ${error instanceof Error ? error.message : '未知错误'}`)
-  } finally {
-    exporting.value = false
-  }
-}
-
-// 导出为Word
-const exportToWord = async () => {
-  exporting.value = true
-  
-  try {
-    const filename = props.resumeData.name || 'resume'
-    
-    if (isCanvasMode.value) {
-      // Canvas模式下暂时不支持Word导出
-      alert('Canvas模式下暂不支持Word导出，请切换到Markdown模式')
-      return
-    } else {
-      // 导出Markdown预览内容为Word
-      console.log('开始导出Markdown预览为Word...')
-      
-      // 调试：检查预览元素
-      const previewElement = document.getElementById('resume-preview')
-      if (previewElement) {
-        console.log('预览元素找到:', previewElement)
-        console.log('元素尺寸:', {
-          width: previewElement.offsetWidth,
-          height: previewElement.offsetHeight,
-          scrollWidth: previewElement.scrollWidth,
-          scrollHeight: previewElement.scrollHeight
-        })
-        console.log('元素内容长度:', previewElement.innerHTML.length)
-      } else {
-        console.error('未找到预览元素 resume-preview')
-        throw new Error('未找到预览元素')
-      }
-      
-      await PDFExportService.exportResumePreviewToWord(filename)
-    }
-    
-    console.log('Word导出成功')
-    alert('Word导出成功！')
-  } catch (error) {
-    console.error('Word导出失败:', error)
-    alert(`Word导出失败: ${error instanceof Error ? error.message : '未知错误'}`)
-  } finally {
-    exporting.value = false
-  }
-}
 
 // 获取模板ID
 const getTemplateId = (template: string) => {
@@ -684,6 +629,12 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   border: 1px solid #e5e7eb;
+}
+
+/* 动态字体样式，优先级更高 */
+::deep(.resume-container.dynamic-font) {
+  font-size: inherit !important;
+  line-height: inherit !important;
 }
 
 :deep(.resume-container .resume-title) {
@@ -882,6 +833,7 @@ onUnmounted(() => {
 .canvas-resume-editor {
   min-height: 100vh;
   background: #F8FAFC;
+  padding: 0 20px;
 }
 
 .editor-header {
@@ -938,53 +890,7 @@ onUnmounted(() => {
   cursor: not-allowed;
 }
 
-.export-btn {
-  background: #8B5CF6;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-}
 
-.export-btn:hover:not(:disabled) {
-  background: #7C3AED;
-}
-
-.export-btn:disabled {
-  background: #9CA3AF;
-  cursor: not-allowed;
-}
-
-.export-word-btn {
-  background: #059669;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-left: 0.5rem;
-}
-
-.export-word-btn:hover:not(:disabled) {
-  background: #047857;
-}
-
-.export-word-btn:disabled {
-  background: #9CA3AF;
-  cursor: not-allowed;
-}
 
 .loading-spinner {
   width: 16px;
@@ -1000,9 +906,9 @@ onUnmounted(() => {
 }
 
 .editor-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 2rem;
+  width: 100%;
+  margin: 0;
+  padding: 1rem 0;
 }
 
 /* Canvas编辑器样式 */
@@ -1262,19 +1168,105 @@ canvas:hover {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
-/* Markdown编辑器样式（保持原有样式） */
+/* Markdown编辑器样式（两栏布局） */
 .markdown-editor-area {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  display: flex;
+  flex-direction: column;
   background: white;
   border-radius: 15px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  min-height: calc(100vh - 120px);
+}
+
+.editor-toolbar {
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0.75rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.toolbar-controls {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.control-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #6c757d;
+  white-space: nowrap;
+}
+
+.control-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.slider {
+  width: 100px;
+  height: 6px;
+  border-radius: 3px;
+  background: #dee2e6;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #007bff;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #007bff;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.control-value {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #495057;
+  min-width: 40px;
+  text-align: center;
+}
+
+.editor-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 1;
+  min-height: 0;
 }
 
 .editor-form {
   padding: 2rem;
+  background: #f8f9fa;
+  border-right: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
 }
 
 .form-section {
@@ -1292,26 +1284,29 @@ canvas:hover {
 
 .form-group {
   margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .form-textarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #D1D5DB;
+  padding: 1rem;
+  border: 1px solid #e9ecef;
   border-radius: 8px;
   font-size: 0.9rem;
-  color: #374151;
+  color: #333;
   background: white;
   transition: all 0.3s ease;
-  resize: vertical;
-  min-height: 400px;
+  resize: none;
+  flex: 1;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 
 .form-textarea:focus {
   outline: none;
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
 .form-help {
@@ -1322,10 +1317,10 @@ canvas:hover {
 }
 
 .resume-preview {
-  background: #F8FAFC;
+  background: white;
   padding: 2rem;
   overflow-y: auto;
-  max-height: 80vh;
+  max-height: calc(100vh - 120px);
 }
 
 .preview-header {
@@ -1359,6 +1354,10 @@ canvas:hover {
 
 /* 响应式设计 */
 @media (max-width: 1024px) {
+  .canvas-resume-editor {
+    padding: 0 10px;
+  }
+  
   .canvas-editor-area,
   .markdown-editor-area {
     grid-template-columns: 1fr;
@@ -1383,6 +1382,34 @@ canvas:hover {
   .editor-form,
   .resume-preview {
     padding: 1rem;
+  }
+  
+  .editor-content {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  
+  .editor-toolbar {
+    padding: 0.75rem 1rem;
+  }
+  
+  .toolbar-controls {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .control-group {
+    width: 100%;
+  }
+  
+  .control-input {
+    justify-content: space-between;
+  }
+  
+  .slider {
+    flex: 1;
+    margin-right: 1rem;
   }
   
   .header-actions {

@@ -93,7 +93,7 @@
             <div class="resume-content">
               <div class="resume-section">
                 <h5>简历内容</h5>
-                <div class="resume-markdown" v-html="renderMarkdown(resume.content || '')"></div>
+                <div class="resume-markdown" v-html="enhancedMarkdownPreview"></div>
               </div>
             </div>
           </div>
@@ -180,10 +180,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getMeetingDetail, deleteMeeting } from '@/service/meeting'
 import { getResumeDetail } from '@/service/resume'
+import { EnhancedMarkdownParser } from '@/utils/MarkdownParser'
 
 const router = useRouter()
 const route = useRoute()
@@ -253,63 +254,15 @@ const getTemplateName = (templateId: number) => {
   return templateNames[templateId] || '未知模板'
 }
 
-// 渲染Markdown
-const renderMarkdown = (markdown: string): string => {
-  if (!markdown) return ''
+// 增强版Markdown预览
+const enhancedMarkdownPreview = computed(() => {
+  const content = resume.value?.content || ''
+  if (!content.trim()) {
+    return '<div class="empty-content">暂无简历内容</div>'
+  }
   
-  // 简单的Markdown转HTML转换
-  let html = markdown
-    // 处理 ::: start ... ::: end 块
-    .replace(/:::\s*start\s*\n*([\s\S]*?)\n*:::\s*end/g, (match, content) => {
-      const lines = content.trim().split('\n').filter((line: string) => line.trim())
-      const formattedContent = lines.map((line: string) => `<div class="highlight-line">${line.trim()}</div>`).join('')
-      return `<div class="highlight-block">${formattedContent}</div>`
-    })
-    // 处理单独的 ::: 符号（作为分隔符）
-    .replace(/:::/g, '<span class="highlight-symbol">:::</span>')
-    // 标题
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    // 粗体
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    // 斜体
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    // 代码块
-    .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-    // 行内代码
-    .replace(/`(.*?)`/g, '<code>$1</code>')
-    // 链接
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
-    // 列表
-    .replace(/^\* (.*$)/gim, '<li>$1</li>')
-    .replace(/^- (.*$)/gim, '<li>$1</li>')
-    // 处理基本信息行（用 | 分隔的信息）
-    .replace(/^([^#\n]+)\|([^#\n]+)\|([^#\n]+)\|([^#\n]+)\|([^#\n]+)\|([^#\n]+)$/gm, (match, p1, p2, p3, p4, p5, p6) => {
-      return `<div class="basic-info-line">
-        <span class="info-item">${p1.trim()}</span>
-        <span class="info-separator">|</span>
-        <span class="info-item">${p2.trim()}</span>
-        <span class="info-separator">|</span>
-        <span class="info-item">${p3.trim()}</span>
-        <span class="info-separator">|</span>
-        <span class="info-item">${p4.trim()}</span>
-        <span class="info-separator">|</span>
-        <span class="info-item">${p5.trim()}</span>
-        <span class="info-separator">|</span>
-        <span class="info-item">${p6.trim()}</span>
-      </div>`
-    })
-    // 段落
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/^(?!<[h|u|o|p|d|b|d])(.*$)/gim, '<p>$1</p>')
-    // 清理多余的p标签
-    .replace(/<p><\/p>/g, '')
-    .replace(/<p><p>/g, '<p>')
-    .replace(/<\/p><\/p>/g, '</p>')
-  
-  return html
-}
+  return EnhancedMarkdownParser.parse(content)
+})
 
 const formatTime = (timestamp: any) => {
   if (!timestamp) return '未知时间'
@@ -830,119 +783,178 @@ onMounted(() => {
   line-height: 1.6;
 }
 
-/* 简历Markdown内容样式 */
+/* 增强版Markdown样式 */
 .resume-markdown {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
   color: #333;
+  max-width: 100%;
 }
 
-.resume-markdown h1 {
-  font-size: 1.6em;
+/* 主标题样式 */
+.resume-markdown .resume-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a202c;
+  text-align: center;
+  margin: 0 0 2rem 0;
+  letter-spacing: 0.5px;
+}
+
+/* 章节标题样式 */
+.resume-markdown .section-title {
+  font-size: 1.25rem;
   font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 12px 0;
-  padding-bottom: 6px;
+  color: #2563eb;
+  margin: 2rem 0 1rem 0;
   border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.5rem;
 }
 
-.resume-markdown h2 {
-  font-size: 1.3em;
-  font-weight: 600;
-  color: #ea0202;
-  margin: 16px 0 10px 0;
+/* 联系方式样式 */
+.resume-markdown .contact-info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
 }
 
-.resume-markdown h3 {
-  font-size: 1.1em;
-  font-weight: 600;
+.resume-markdown .contact-item {
+  font-size: 0.9rem;
+  color: #4a5568;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 技术栈样式 */
+.resume-markdown .tech-stack-section {
+  margin: 1rem 0;
+}
+
+.resume-markdown .tech-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.resume-markdown .tech-tag {
+  background: #e2e8f0;
+  color: #4a5568;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* 经验项目样式 */
+.resume-markdown .experience-item {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.resume-markdown .experience-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  gap: 1rem;
+}
+
+.resume-markdown .experience-line {
+  flex: 1;
+  font-weight: 500;
   color: #374151;
-  margin: 14px 0 8px 0;
 }
 
-.resume-markdown p {
-  margin: 0 0 10px 0;
-  line-height: 1.7;
-}
-
-.resume-markdown strong {
+.resume-markdown .experience-line.company {
   font-weight: 600;
   color: #1f2937;
 }
 
-.resume-markdown em {
-  font-style: italic;
-  color: #6b7280;
+.resume-markdown .experience-line.position {
+  text-align: center;
+  color: #4b5563;
 }
 
+.resume-markdown .experience-line.duration {
+  text-align: right;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+/* 描述文本样式 */
+.resume-markdown .description {
+  color: #4a5568;
+  line-height: 1.7;
+  margin: 0.5rem 0;
+}
+
+/* 关键词高亮 */
+.resume-markdown .highlight-keyword {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* 列表样式 */
+.resume-markdown ul {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.resume-markdown li {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+  color: #4a5568;
+}
+
+/* 段落样式 */
+.resume-markdown p {
+  margin: 0.75rem 0;
+  line-height: 1.7;
+  color: #4a5568;
+}
+
+/* 粗体样式 */
+.resume-markdown strong {
+  font-weight: 700;
+  color: #1a202c;
+}
+
+/* 代码样式 */
 .resume-markdown code {
-  background: #f3f4f6;
-  padding: 2px 5px;
-  border-radius: 3px;
+  background: #f1f5f9;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 0.9em;
+  font-size: 0.875rem;
   color: #dc2626;
 }
 
 .resume-markdown pre {
   background: #f8fafc;
-  padding: 12px;
-  border-radius: 6px;
+  padding: 1rem;
+  border-radius: 0.5rem;
   border: 1px solid #e2e8f0;
   overflow-x: auto;
-  margin: 12px 0;
+  margin: 1rem 0;
 }
 
 .resume-markdown pre code {
   background: none;
   padding: 0;
   color: #374151;
-}
-
-/* 高亮块样式 */
-.resume-markdown .highlight-block {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border: 1px solid #bae6fd;
-  border-radius: 6px;
-  padding: 12px;
-  margin: 12px 0;
-  position: relative;
-}
-
-.resume-markdown .highlight-block::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
-  border-radius: 6px 6px 0 0;
-}
-
-.resume-markdown .highlight-line {
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(186, 230, 253, 0.3);
-  font-weight: 500;
-  color: #1e40af;
-}
-
-.resume-markdown .highlight-line:last-child {
-  border-bottom: none;
-}
-
-/* 高亮符号样式 */
-.resume-markdown .highlight-symbol {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  color: #92400e;
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-weight: 600;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 0.8em;
-  border: 1px solid #fbbf24;
-  display: inline-block;
-  margin: 0 1px;
 }
 
 .interview-sidebar {
@@ -1140,6 +1152,7 @@ onMounted(() => {
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

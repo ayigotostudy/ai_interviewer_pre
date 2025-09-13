@@ -6,10 +6,10 @@
           <span class="icon">←</span>
           返回
         </button>
-        <h1>{{ isEditing ? '编辑简历' : '简历详情' }}</h1>
+        <h1>简历详情</h1>
         <div class="header-actions">
-          <button class="mode-switch-btn" @click="toggleEditMode">
-            {{ isEditing ? '预览模式' : '编辑模式' }}
+          <button class="mode-switch-btn" @click="goToEdit">
+            编辑模式
           </button>
           <button class="export-btn" @click="exportToPDF" :disabled="exporting">
             <span v-if="exporting" class="loading-spinner"></span>
@@ -19,69 +19,13 @@
             <span v-if="exporting" class="loading-spinner"></span>
             {{ exporting ? '导出中...' : '导出Word' }}
           </button>
-          <button class="save-btn" @click="saveResume" :disabled="saving" v-if="isEditing">
-            <span v-if="saving" class="loading-spinner"></span>
-            {{ saving ? '保存中...' : '保存简历' }}
-          </button>
         </div>
       </div>
     </div>
 
     <div class="resume-content">
-      <!-- 编辑模式 -->
-      <div v-if="isEditing" class="editor-container">
-        <!-- Markdown编辑器区域 -->
-        <div class="markdown-editor-area">
-          <div class="editor-form">
-            <div class="form-section">
-              <h3>内容（Markdown）</h3>
-              <div class="form-group">
-                <textarea 
-                  v-model="resume.content"
-                  placeholder="# 标题、## 分区、- 列表 等支持实时预览
-
-支持 ::: 区块语法：
-::: start
-**公司名称**
-**职位名称**
-**时间**
-::: end
-
-支持技术栈标签：
-技术栈：Vue.js, React, Node.js, Python
-
-支持关键词高亮：985、211等关键词会自动高亮"
-                  class="markdown-textarea"
-                ></textarea>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 实时预览区域 -->
-        <div class="resume-preview">
-          <div class="preview-header">
-            <h3>实时预览（增强版）</h3>
-            <div class="preview-controls">
-              <div class="zoom-controls">
-                <button class="zoom-btn" @click="zoomOut" :disabled="zoomLevel <= 0.5">-</button>
-                <span class="zoom-level">{{ Math.round(zoomLevel * 100) }}%</span>
-                <button class="zoom-btn" @click="zoomIn" :disabled="zoomLevel >= 2">+</button>
-                <button class="zoom-reset-btn" @click="resetZoom">重置</button>
-              </div>
-              <div class="template-badge">
-                模板：{{ getTemplateName(resume.template_id) }}
-              </div>
-            </div>
-          </div>
-          <div class="preview-content" :style="{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }">
-            <div id="resume-preview" class="resume-container" v-html="enhancedMarkdownPreview"></div>
-          </div>
-        </div>
-      </div>
-
       <!-- 预览模式 -->
-      <div v-else class="preview-container">
+      <div class="preview-container">
         <div class="resume-preview">
           <div class="preview-header">
             <h3>简历预览</h3>
@@ -89,7 +33,7 @@
               <div class="zoom-controls">
                 <button class="zoom-btn" @click="zoomOut" :disabled="zoomLevel <= 0.5">-</button>
                 <span class="zoom-level">{{ Math.round(zoomLevel * 100) }}%</span>
-                <button class="zoom-btn" @click="zoomIn" :disabled="zoomLevel >= 2">+</button>
+                <button class="zoom-btn" @click="zoomIn" :disabled="zoomLevel >= 1.1">+</button>
                 <button class="zoom-reset-btn" @click="resetZoom">重置</button>
               </div>
               <div class="template-badge">
@@ -97,8 +41,13 @@
               </div>
             </div>
           </div>
-          <div class="preview-content" :style="{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }">
-            <div id="resume-preview" class="resume-container" v-html="enhancedMarkdownPreview"></div>
+          <div class="preview-content">
+            <div class="scaled-content" :style="{ 
+              transform: `scale(${zoomLevel})`, 
+              transformOrigin: 'center center'
+            }">
+              <div id="resume-preview" class="resume-container" v-html="enhancedMarkdownPreview"></div>
+            </div>
           </div>
         </div>
 
@@ -165,7 +114,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getResumeDetail, deleteResume as deleteResumeAPI, updateResume, type ResumeDetailResponse } from '@/service/resume'
+import { getResumeDetail, deleteResume as deleteResumeAPI, type ResumeDetailResponse } from '@/service/resume'
 import { EnhancedMarkdownParser } from '@/utils/MarkdownParser'
 import { PDFExportService } from '@/services/PDFExportService'
 
@@ -187,8 +136,6 @@ const resume = ref<ResumeDetailResponse>({
 const relatedInterviews = ref<any[]>([])
 const isDeleting = ref(false) // 添加删除状态
 const exporting = ref(false) // 添加导出状态
-const saving = ref(false) // 添加保存状态
-const isEditing = ref(false) // 编辑模式状态
 const zoomLevel = ref(1) // 缩放级别
 
 // 模板名称映射
@@ -300,15 +247,16 @@ const enhancedMarkdownPreview = computed(() => {
   return EnhancedMarkdownParser.parse(content)
 })
 
-// 切换编辑模式
-const toggleEditMode = () => {
-  isEditing.value = !isEditing.value
+// 跳转到编辑页面
+const goToEdit = () => {
+  const id = route.params.id as string
+  router.push(`/resume/edit/${id}`)
 }
 
 // 缩放控制方法
 const zoomIn = () => {
-  if (zoomLevel.value < 2) {
-    zoomLevel.value = Math.min(2, zoomLevel.value + 0.1)
+  if (zoomLevel.value < 1.1) {
+    zoomLevel.value = Math.min(1.1, zoomLevel.value + 0.1)
   }
 }
 
@@ -322,28 +270,6 @@ const resetZoom = () => {
   zoomLevel.value = 1
 }
 
-// 保存简历
-const saveResume = async () => {
-  saving.value = true
-  
-  try {
-    const data = {
-      name: resume.value.name,
-      content: resume.value.content,
-      template_id: resume.value.template_id,
-      status: resume.value.status.toString()
-    }
-
-    await updateResume(parseInt(route.params.id as string), data)
-    alert('简历保存成功！')
-    isEditing.value = false
-  } catch (error) {
-    console.error('保存失败:', error)
-    alert('保存失败，请重试')
-  } finally {
-    saving.value = false
-  }
-}
 
 const goBack = () => {
   router.go(-1)
@@ -647,13 +573,6 @@ onMounted(() => {
   padding: 2rem;
 }
 
-/* 编辑模式布局 */
-.editor-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  height: calc(100vh - 200px);
-}
 
 .markdown-editor-area {
   background: white;
@@ -801,8 +720,23 @@ onMounted(() => {
 .preview-content {
   flex: 1;
   overflow: auto;
-  min-height: 600px;
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
+  max-height: calc(100vh - 200px);
+  min-height: calc(100vh - 200px);
+}
+
+.scaled-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: fit-content;
+  height: fit-content;
+  min-width: 100%;
+  min-height: 100%;
 }
 
 .resume-preview {
@@ -810,6 +744,9 @@ onMounted(() => {
   border-radius: 15px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   padding: 2rem;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
 
@@ -1057,7 +994,8 @@ onMounted(() => {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', sans-serif;
   line-height: 1.6;
   color: #333;
-  max-width: 800px;
+  width: 800px;
+  min-width: 800px;
   margin: 0 auto;
   background: white;
   padding: 40px;
@@ -1065,24 +1003,22 @@ onMounted(() => {
   border-radius: 10px;
 }
 
-:deep(.resume-container h1) {
-  color: #1e40af;
-  font-size: 32px;
-  margin-bottom: 20px;
-  border-bottom: 3px solid #1e40af;
-  padding-bottom: 10px;
-  font-weight: bold;
+:deep(.resume-container .resume-title) {
+  font-size: 18pt;
+  font-weight: 700;
+  margin: 0 0 16pt 0;
   text-align: center;
+  line-height: 1.2;
+  color: #000;
 }
 
-:deep(.resume-container h2) {
-  color: #1e40af;
-  font-size: 18px;
-  margin-top: 30px;
-  margin-bottom: 15px;
-  border-bottom: 2px solid #1e40af;
-  padding-bottom: 5px;
-  font-weight: bold;
+:deep(.resume-container .section-title) {
+  font-size: 14pt;
+  font-weight: 600;
+  margin: 20pt 0 12pt 0;
+  padding-bottom: 4pt;
+  border-bottom: 2pt solid #3b82f6;
+  color: #000;
 }
 
 :deep(.resume-container .contact-info) {
@@ -1108,7 +1044,6 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 8px;
   padding: 8px 0;
-  border-bottom: 1px solid #e5e7eb;
 }
 
 :deep(.resume-container .experience-header.one-item) {
@@ -1244,6 +1179,11 @@ onMounted(() => {
   
   .resume-preview {
     padding: 1.5rem;
+  }
+  
+  .preview-content {
+    max-height: calc(100vh - 180px);
+    min-height: calc(100vh - 180px);
   }
   
   .editor-container {
