@@ -336,7 +336,12 @@ const exportToImage = async () => {
     console.log('增强Markdown预览前200字符:', enhancedMarkdownPreview.value?.substring(0, 200))
     
     const element = document.getElementById('resume-preview')
+    const scaledContent = element?.closest('.scaled-content')
+    const previewContent = element?.closest('.preview-content')
+    
     console.log('导出元素:', element)
+    console.log('scaled-content父容器:', scaledContent)
+    console.log('preview-content父容器:', previewContent)
     console.log('元素innerHTML长度:', element?.innerHTML?.length)
     console.log('元素innerHTML前200字符:', element?.innerHTML?.substring(0, 200))
     console.log('元素可见性:', element ? window.getComputedStyle(element).visibility : 'N/A')
@@ -347,6 +352,16 @@ const exportToImage = async () => {
       scrollWidth: element.scrollWidth,
       scrollHeight: element.scrollHeight
     } : 'N/A')
+    
+    if (scaledContent) {
+      const scaledElement = scaledContent as HTMLElement
+      console.log('scaled-content尺寸:', {
+        width: scaledElement.offsetWidth,
+        height: scaledElement.offsetHeight,
+        scrollWidth: scaledElement.scrollWidth,
+        scrollHeight: scaledElement.scrollHeight
+      })
+    }
     
     await PDFExportService.exportResumePreviewToImage(filename, 'png')
     alert('图片导出成功！')
@@ -1036,7 +1051,7 @@ onMounted(() => {
 :deep(.resume-container) {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', sans-serif;
   line-height: 1.6;
-  color: #333;
+  color: #1F2937;
   width: 800px;
   min-width: 800px;
   margin: 0 auto;
@@ -1052,7 +1067,7 @@ onMounted(() => {
   margin: 0 0 16pt 0;
   text-align: center;
   line-height: 1.2;
-  color: #000;
+  color: #3b82f6;
 }
 
 :deep(.resume-container .section-title) {
@@ -1061,7 +1076,7 @@ onMounted(() => {
   margin: 20pt 0 12pt 0;
   padding-bottom: 4pt;
   border-bottom: 2pt solid #3b82f6;
-  color: #000;
+  color: #3b82f6;
 }
 
 :deep(.resume-container .contact-info) {
@@ -1074,7 +1089,7 @@ onMounted(() => {
 
 :deep(.resume-container .contact-item) {
   font-size: 14px;
-  color: #6b7280;
+  color: #6B7280;
   background: #f3f4f6;
   padding: 6px 12px;
   border-radius: 6px;
@@ -1123,7 +1138,7 @@ onMounted(() => {
 :deep(.resume-container .experience-line.duration) {
   font-weight: bold;
   font-size: 11px;
-  color: #6b7280;
+  color: #6B7280;
   text-align: right;
   margin-left: auto;
 }

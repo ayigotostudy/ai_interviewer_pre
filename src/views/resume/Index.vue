@@ -556,30 +556,30 @@ Java, Spring Boot, MySQL, Redis, Docker`,
 
 /* 增强版Markdown样式 */
 .resume-content {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  line-height: 1.5;
-  color: #333;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', sans-serif !important;
+  line-height: 1.6 !important;
+  color: #1F2937 !important;
   max-width: 100%;
 }
 
 /* 主标题样式 */
 .resume-content .resume-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #1a202c;
-  text-align: center;
-  margin: 0 0 1rem 0;
-  letter-spacing: 0.3px;
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  color: #3b82f6 !important;
+  text-align: center !important;
+  margin: 0 0 1rem 0 !important;
+  letter-spacing: 0.3px !important;
 }
 
 /* 章节标题样式 */
 .resume-content .section-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #2563eb;
-  margin: 1.5rem 0 0.75rem 0;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 0.25rem;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: #3b82f6 !important;
+  margin: 1.5rem 0 0.75rem 0 !important;
+  border-bottom: 2pt solid #3b82f6 !important;
+  padding-bottom: 4pt !important;
 }
 
 /* 联系方式样式 */
@@ -596,10 +596,10 @@ Java, Spring Boot, MySQL, Redis, Docker`,
 }
 
 .resume-content .contact-item {
-  font-size: 0.8rem;
-  color: #4a5568;
-  font-weight: 500;
-  white-space: nowrap;
+  font-size: 0.8rem !important;
+  color: #6B7280 !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
 }
 
 /* 技术栈样式 */
@@ -615,12 +615,12 @@ Java, Spring Boot, MySQL, Redis, Docker`,
 }
 
 .resume-content .tech-tag {
-  background: #e2e8f0;
-  color: #4a5568;
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 500;
+  background: #f3f4f6 !important;
+  color: #374151 !important;
+  padding: 0.125rem 0.5rem !important;
+  border-radius: 0.75rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
 }
 
 /* 经验项目样式 */
@@ -658,13 +658,13 @@ Java, Spring Boot, MySQL, Redis, Docker`,
 
 .resume-content .experience-line.duration {
   text-align: right;
-  color: #6b7280;
+  color: #6B7280;
   font-size: 0.75rem;
 }
 
 /* 描述文本样式 */
 .resume-content .description {
-  color: #4a5568;
+  color: #374151;
   line-height: 1.5;
   margin: 0.25rem 0;
   font-size: 0.8rem;
@@ -689,7 +689,7 @@ Java, Spring Boot, MySQL, Redis, Docker`,
 .resume-content li {
   margin: 0.25rem 0;
   line-height: 1.4;
-  color: #4a5568;
+  color: #374151;
   font-size: 0.8rem;
 }
 
@@ -697,14 +697,14 @@ Java, Spring Boot, MySQL, Redis, Docker`,
 .resume-content p {
   margin: 0.5rem 0;
   line-height: 1.5;
-  color: #4a5568;
+  color: #374151;
   font-size: 0.8rem;
 }
 
 /* 粗体样式 */
 .resume-content strong {
   font-weight: 700;
-  color: #1a202c;
+  color: #1F2937;
 }
 
 /* 代码样式 */
