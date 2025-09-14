@@ -15,9 +15,9 @@
             <span v-if="exporting" class="loading-spinner"></span>
             {{ exporting ? '导出中...' : '导出PDF' }}
           </button>
-          <button class="export-word-btn" @click="exportToWord" :disabled="exporting">
+          <button class="export-image-btn" @click="exportToImage" :disabled="exporting">
             <span v-if="exporting" class="loading-spinner"></span>
-            {{ exporting ? '导出中...' : '导出Word' }}
+            {{ exporting ? '导出中...' : '导出图片' }}
           </button>
         </div>
       </div>
@@ -290,7 +290,30 @@ const exportToPDF = async () => {
   
   try {
     const filename = resume.value.name || 'resume'
-    await PDFExportService.exportResumePreviewWithPuppeteer(filename)
+    
+    // 详细调试信息
+    console.log('=== PDF导出调试信息 ===')
+    console.log('简历数据:', resume.value)
+    console.log('增强Markdown预览长度:', enhancedMarkdownPreview.value?.length)
+    console.log('增强Markdown预览前200字符:', enhancedMarkdownPreview.value?.substring(0, 200))
+    
+    const element = document.getElementById('resume-preview')
+    console.log('导出元素:', element)
+    console.log('元素innerHTML长度:', element?.innerHTML?.length)
+    console.log('元素innerHTML前200字符:', element?.innerHTML?.substring(0, 200))
+    console.log('元素可见性:', element ? window.getComputedStyle(element).visibility : 'N/A')
+    console.log('元素显示状态:', element ? window.getComputedStyle(element).display : 'N/A')
+    console.log('元素尺寸:', element ? {
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+      scrollWidth: element.scrollWidth,
+      scrollHeight: element.scrollHeight
+    } : 'N/A')
+    
+    await PDFExportService.exportPreviewToPDF('resume-preview', filename, {
+      scale: 2,
+      backgroundColor: '#ffffff'
+    })
     alert('PDF导出成功！')
   } catch (error) {
     console.error('PDF导出失败:', error)
@@ -300,16 +323,36 @@ const exportToPDF = async () => {
   }
 }
 
-const exportToWord = async () => {
+const exportToImage = async () => {
   exporting.value = true
   
   try {
     const filename = resume.value.name || 'resume'
-    await PDFExportService.exportResumePreviewToWord(filename)
-    alert('Word导出成功！')
+    
+    // 详细调试信息
+    console.log('=== 图片导出调试信息 ===')
+    console.log('简历数据:', resume.value)
+    console.log('增强Markdown预览长度:', enhancedMarkdownPreview.value?.length)
+    console.log('增强Markdown预览前200字符:', enhancedMarkdownPreview.value?.substring(0, 200))
+    
+    const element = document.getElementById('resume-preview')
+    console.log('导出元素:', element)
+    console.log('元素innerHTML长度:', element?.innerHTML?.length)
+    console.log('元素innerHTML前200字符:', element?.innerHTML?.substring(0, 200))
+    console.log('元素可见性:', element ? window.getComputedStyle(element).visibility : 'N/A')
+    console.log('元素显示状态:', element ? window.getComputedStyle(element).display : 'N/A')
+    console.log('元素尺寸:', element ? {
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+      scrollWidth: element.scrollWidth,
+      scrollHeight: element.scrollHeight
+    } : 'N/A')
+    
+    await PDFExportService.exportResumePreviewToImage(filename, 'png')
+    alert('图片导出成功！')
   } catch (error) {
-    console.error('Word导出失败:', error)
-    alert('Word导出失败，请重试')
+    console.error('图片导出失败:', error)
+    alert('图片导出失败，请重试')
   } finally {
     exporting.value = false
   }
@@ -518,7 +561,7 @@ onMounted(() => {
   gap: 1rem;
 }
 
-.mode-switch-btn, .export-btn, .export-word-btn, .save-btn {
+.mode-switch-btn, .export-btn, .export-image-btn, .save-btn {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 10px;
@@ -549,12 +592,12 @@ onMounted(() => {
   background: #BFDBFE;
 }
 
-.export-word-btn {
+.export-image-btn {
   background: #E0F2FE;
   color: #1E40AF;
 }
 
-.export-word-btn:hover {
+.export-image-btn:hover {
   background: #C6EAFE;
 }
 
@@ -1169,7 +1212,7 @@ onMounted(() => {
     width: 100%;
   }
   
-  .mode-switch-btn, .export-btn, .export-word-btn, .save-btn {
+  .mode-switch-btn, .export-btn, .export-image-btn, .save-btn {
     width: 100%;
   }
   
