@@ -24,14 +24,24 @@
 
         <div class="form-group">
           <label for="password">密码</label>
-          <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            placeholder="请输入密码"
-            required
-            :disabled="loading"
-          />
+          <div class="password-input-group">
+            <input
+              id="password"
+              v-model="form.password"
+              :type="showPassword ? 'text' : 'password'"
+              placeholder="请输入密码"
+              required
+              :disabled="loading"
+            />
+            <button
+              type="button"
+              class="password-toggle-btn"
+              @click="togglePassword"
+              :disabled="loading"
+            >
+              <span class="password-icon">{{ showPassword ? '👁️' : '🙈' }}</span>
+            </button>
+          </div>
         </div>
 
         <div v-if="error" class="error-message">
@@ -60,11 +70,16 @@ import { login } from '@/service/user'
 const router = useRouter()
 const loading = ref(false)
 const error = ref('')
+const showPassword = ref(false)
 
 const form = ref({
   email: '',
   password: ''
 })
+
+const togglePassword = () => {
+  showPassword.value = !showPassword.value
+}
 
 const handleLogin = async () => {
   if (!form.value.email || !form.value.password) {
@@ -191,6 +206,46 @@ const handleLogin = async () => {
 .form-group input:disabled {
   background-color: #F9FAFB;
   cursor: not-allowed;
+}
+
+.password-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-group input {
+  padding-right: 3rem;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle-btn:hover {
+  background-color: #F3F4F6;
+}
+
+.password-toggle-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.password-icon {
+  font-size: 1.2rem;
+  line-height: 1;
 }
 
 .error-message {

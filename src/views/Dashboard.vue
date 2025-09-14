@@ -107,23 +107,8 @@ const loadStats = () => {
 
 // 加载最近活动
 const loadRecentActivities = () => {
-  // 这里可以从API获取真实数据
-  recentActivities.value = [
-    {
-      id: 1,
-      icon: '📄',
-      title: '创建了简历',
-      description: '张三的软件工程师简历',
-      time: '2小时前'
-    },
-    {
-      id: 2,
-      icon: '💼',
-      title: '安排了面试',
-      description: '与腾讯科技的面试',
-      time: '1天前'
-    }
-  ]
+  // 不再加载示例数据，保持空数组
+  recentActivities.value = []
 }
 
 onMounted(() => {

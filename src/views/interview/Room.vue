@@ -290,7 +290,7 @@ const interview = ref<{
   time?: number
   status?: string
 
-}>({ candidate: '张三', position: '软件工程师' })
+}>({ candidate: '', position: '' })
 const resume = ref<{
   name: string
   basic_info: string

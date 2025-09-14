@@ -127,30 +127,39 @@ export class EnhancedMarkdownParser {
           line-height: 1.6;
           color: #1a1a1a;
           background: white;
-          max-width: 210mm;
+          max-width: 100%;
           margin: 0 auto;
-          padding: 32pt 28pt;
+          padding: 2rem;
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
           border-radius: 12px;
           border: 1px solid #e5e7eb;
+          overflow-wrap: break-word;
+          word-wrap: break-word;
+          word-break: break-word;
         }
 
         .resume-title {
-          font-size: 18pt;
+          font-size: 2rem;
           font-weight: 700;
-          margin: 0 0 16pt 0;
+          margin: 0 0 2rem 0;
           text-align: center;
           line-height: 1.2;
           color: #000;
+          overflow-wrap: break-word;
+          word-wrap: break-word;
+          letter-spacing: -0.025em;
         }
 
         .section-title {
-          font-size: 14pt;
+          font-size: 1.5rem;
           font-weight: 600;
-          margin: 20pt 0 12pt 0;
-          padding-bottom: 4pt;
-          border-bottom: 2pt solid #000;
-          color: #000;
+          margin: 2.5rem 0 1.5rem 0;
+          padding-bottom: 0.75rem;
+          border-bottom: 3px solid #3b82f6;
+          color: #1e40af;
+          overflow-wrap: break-word;
+          word-wrap: break-word;
+          letter-spacing: -0.025em;
         }
 
         .contact-info {
@@ -158,45 +167,53 @@ export class EnhancedMarkdownParser {
           justify-content: center;
           align-items: center;
           flex-wrap: wrap;
-          gap: 12px;
-          margin: 0 0 20pt 0;
+          gap: 0.75rem;
+          margin: 0 0 1.5rem 0;
           padding: 0;
+          max-width: 100%;
         }
 
         .contact-item {
           display: inline-flex;
           align-items: center;
-          padding: 6px 12px;
+          padding: 0.5rem 0.75rem;
           background: #f8fafc;
           border-radius: 8px;
           border: 1px solid #e2e8f0;
-          font-size: 11pt;
+          font-size: 0.9rem;
           color: #2d3748;
           white-space: nowrap;
           font-weight: 500;
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .tech-stack-section {
-          margin: 12pt 0;
+          margin: 1rem 0;
         }
 
         .tech-tags {
           display: flex;
           flex-wrap: wrap;
-          gap: 6px;
-          margin-top: 8pt;
+          gap: 0.5rem;
+          margin-top: 0.75rem;
         }
 
         .tech-tag {
           display: inline-block;
-          padding: 4px 10px;
+          padding: 0.375rem 0.75rem;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: white;
           border-radius: 16px;
-          font-size: 10pt;
+          font-size: 0.8rem;
           font-weight: 500;
           box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
           transition: all 0.3s ease;
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .tech-tag:hover {
@@ -205,67 +222,176 @@ export class EnhancedMarkdownParser {
         }
 
         .experience-item {
-          margin-bottom: 16pt;
-          padding: 0;
-          background: transparent;
+          margin-bottom: 1.5rem;
+          padding: 1rem;
+          background: #f8fafc;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+          max-width: 100%;
+          overflow: hidden;
         }
 
         .experience-header {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          margin-bottom: 8pt;
+          margin-bottom: 0.75rem;
+          gap: 1rem;
+          flex-wrap: wrap;
+        }
+
+        .experience-header.three-items {
+          display: grid;
+          grid-template-columns: 2fr 1fr 1fr;
+          gap: 1rem;
+        }
+
+        .experience-header.two-items {
+          display: grid;
+          grid-template-columns: 2fr 1fr;
+          gap: 1rem;
+        }
+
+        .experience-header.one-item {
+          display: block;
+        }
+
+        .experience-line {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #000;
+          line-height: 1.4;
+          overflow-wrap: break-word;
+          word-wrap: break-word;
+        }
+
+        .experience-line.company {
+          font-weight: 700;
+          color: #1e40af;
+        }
+
+        .experience-line.position {
+          text-align: center;
+          color: #374151;
+        }
+
+        .experience-line.duration {
+          text-align: right;
+          color: #1e40af;
+          font-size: 0.9rem;
+          font-weight: 700;
+          white-space: nowrap;
+          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+          padding: 0.5rem 1rem;
+          border-radius: 20px;
+          border: 1px solid #3b82f6;
         }
 
         .company-info {
           flex: 1;
+          min-width: 0;
         }
 
         .company-name {
-          font-size: 12pt;
+          font-size: 1rem;
           font-weight: 600;
           color: #000;
-          margin: 0 0 4pt 0;
+          margin: 0 0 0.25rem 0;
           line-height: 1.3;
+          overflow-wrap: break-word;
+          word-wrap: break-word;
         }
 
         .position {
-          font-size: 11pt;
+          font-size: 0.9rem;
           font-weight: 600;
           color: #000;
+          overflow-wrap: break-word;
+          word-wrap: break-word;
         }
 
         .duration {
-          font-size: 10pt;
+          font-size: 0.8rem;
           color: #000;
           font-weight: 600;
           white-space: nowrap;
         }
 
         .description {
-          font-size: 11pt;
-          color: #000;
+          font-size: 0.9rem;
+          color: #374151;
           margin: 0;
-          line-height: 1.5;
+          line-height: 1.6;
+          overflow-wrap: break-word;
+          word-wrap: break-word;
         }
 
         .experience-list {
-          margin: 8pt 0 0 0;
+          margin: 0.75rem 0 0 0;
           padding-left: 0;
           list-style: none;
         }
+        
+        .experience-list ul {
+          list-style: none;
+          padding-left: 0;
+        }
+        
+        /* 确保所有列表都不显示默认的列表点 */
+        .resume-container ul {
+          list-style: none !important;
+          padding-left: 0 !important;
+        }
+        
+        .resume-container li {
+          list-style: none !important;
+        }
+        
+        /* 强制覆盖所有可能的列表样式 */
+        .resume-container ul li {
+          list-style: none !important;
+        }
+        
+        .resume-container ul li::marker {
+          display: none !important;
+        }
+        
+        /* 确保所有嵌套列表也不显示默认样式 */
+        .resume-container ul ul,
+        .resume-container ul ol,
+        .resume-container ol ul,
+        .resume-container ol ol {
+          list-style: none !important;
+          padding-left: 0 !important;
+        }
+        
+        .resume-container ul ul li,
+        .resume-container ul ol li,
+        .resume-container ol ul li,
+        .resume-container ol ol li {
+          list-style: none !important;
+        }
+        
+        .resume-container ul ul li::marker,
+        .resume-container ul ol li::marker,
+        .resume-container ol ul li::marker,
+        .resume-container ol ol li::marker {
+          display: none !important;
+        }
 
         .experience-list li {
-          margin-bottom: 6pt;
+          margin-bottom: 0.5rem;
           line-height: 1.5;
           color: #2d3748;
-          padding: 6px 12px 6px 28px;
+          padding: 0.75rem 1rem 0.75rem 2rem;
           position: relative;
           background: #f8fafc;
           border-radius: 6px;
           border-left: 3px solid #667eea;
           transition: all 0.3s ease;
-          font-size: 10pt;
+          font-size: 0.9rem;
+          overflow-wrap: break-word;
+          word-wrap: break-word;
         }
 
         .experience-list li:hover {
@@ -284,10 +410,20 @@ export class EnhancedMarkdownParser {
         }
 
         .section-content {
-          font-size: 11pt;
-          color: #000;
-          margin: 0 0 8pt 0;
-          line-height: 1.5;
+          font-size: 1rem;
+          color: #374151;
+          margin: 0 0 1.5rem 0;
+          line-height: 1.7;
+          overflow-wrap: break-word;
+          word-wrap: break-word;
+        }
+
+        .section-content:first-of-type {
+          margin-top: 0;
+        }
+
+        .section-content:last-of-type {
+          margin-bottom: 0;
         }
 
         .highlight-keyword {
@@ -303,6 +439,90 @@ export class EnhancedMarkdownParser {
         strong {
           font-weight: 700;
           color: #000;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+          .resume-container {
+            padding: 1rem;
+            margin: 0.5rem;
+          }
+
+          .resume-title {
+            font-size: 1.3rem;
+          }
+
+          .section-title {
+            font-size: 1.1rem;
+          }
+
+          .contact-info {
+            gap: 0.5rem;
+          }
+
+          .contact-item {
+            font-size: 0.8rem;
+            padding: 0.375rem 0.5rem;
+          }
+
+          .experience-header.three-items {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+          }
+
+          .experience-header.two-items {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+          }
+
+          .experience-line.position,
+          .experience-line.duration {
+            text-align: left;
+          }
+
+          .experience-item {
+            padding: 0.75rem;
+          }
+
+          .tech-tag {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+          }
+
+          .experience-list li {
+            padding: 0.5rem 0.75rem 0.5rem 1.5rem;
+            font-size: 0.8rem;
+          }
+
+          .section-content {
+            font-size: 0.8rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .resume-container {
+            padding: 0.75rem;
+            margin: 0.25rem;
+          }
+
+          .contact-info {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .contact-item {
+            text-align: center;
+            white-space: normal;
+          }
+
+          .experience-header {
+            flex-direction: column;
+            gap: 0.25rem;
+          }
+
+          .experience-line {
+            text-align: left !important;
+          }
         }
       </style>
     `;

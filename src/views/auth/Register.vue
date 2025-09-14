@@ -49,29 +49,49 @@
 
         <div v-if="step >= 2" class="form-group">
           <label for="password">设置密码</label>
-          <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            placeholder="请设置6位以上密码"
-            required
-            :disabled="loading"
-            minlength="6"
-          />
+          <div class="password-input-group">
+            <input
+              id="password"
+              v-model="form.password"
+              :type="showPassword ? 'text' : 'password'"
+              placeholder="请设置6位以上密码"
+              required
+              :disabled="loading"
+              minlength="6"
+            />
+            <button
+              type="button"
+              class="password-toggle-btn"
+              @click="togglePassword"
+              :disabled="loading"
+            >
+              <span class="password-icon">{{ showPassword ? '👁️' : '🙈' }}</span>
+            </button>
+          </div>
           <p class="help-text">密码长度至少6位，建议包含字母和数字</p>
         </div>
 
         <div v-if="step >= 2" class="form-group">
           <label for="confirmPassword">确认密码</label>
-          <input
-            id="confirmPassword"
-            v-model="form.confirmPassword"
-            type="password"
-            placeholder="请再次输入密码"
-            required
-            :disabled="loading"
-            minlength="6"
-          />
+          <div class="password-input-group">
+            <input
+              id="confirmPassword"
+              v-model="form.confirmPassword"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              placeholder="请再次输入密码"
+              required
+              :disabled="loading"
+              minlength="6"
+            />
+            <button
+              type="button"
+              class="password-toggle-btn"
+              @click="toggleConfirmPassword"
+              :disabled="loading"
+            >
+              <span class="password-icon">{{ showConfirmPassword ? '👁️' : '🙈' }}</span>
+            </button>
+          </div>
           <p v-if="form.confirmPassword && form.password !== form.confirmPassword" class="error-text">
             两次输入的密码不一致
           </p>
@@ -110,6 +130,8 @@ const error = ref('')
 const success = ref('')
 const step = ref(1)
 const countdown = ref(0)
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 
 const form = ref({
   email: '',
@@ -117,6 +139,14 @@ const form = ref({
   password: '',
   confirmPassword: ''
 })
+
+const togglePassword = () => {
+  showPassword.value = !showPassword.value
+}
+
+const toggleConfirmPassword = () => {
+  showConfirmPassword.value = !showConfirmPassword.value
+}
 
 const verifyBtnText = computed(() => {
   if (countdown.value > 0) {
@@ -327,6 +357,46 @@ const handleRegister = async () => {
 .form-group input:disabled {
   background-color: #F9FAFB;
   cursor: not-allowed;
+}
+
+.password-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-group input {
+  padding-right: 3rem;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle-btn:hover {
+  background-color: #F3F4F6;
+}
+
+.password-toggle-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.password-icon {
+  font-size: 1.2rem;
+  line-height: 1;
 }
 
 .help-text {

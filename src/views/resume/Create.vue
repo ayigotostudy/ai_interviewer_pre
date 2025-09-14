@@ -87,7 +87,7 @@
           </div>
 
           <!-- 合并后的时间序消息流（从旧到新，直接遍历） -->
-          <div v-for="(msg, i) in messages" :key="i" :class="['message', msg.role === 'user' ? 'user-message' : 'ai-message']">
+          <div v-for="msg in messages" :key="msg.id" :class="['message', msg.role === 'user' ? 'user-message' : 'ai-message']">
             <div class="message-avatar">
               <img v-if="msg.role==='ai'" src="/offer.png" alt="智能助手" />
               <img v-else src="https://via.placeholder.com/40x40/10B981/ffffff?text=我" alt="我" />
@@ -198,13 +198,51 @@ const resumeData = ref({
   awards: '优秀员工'
 })
 
+// 生成简历内容
+const generateResumeContent = () => {
+  return `# ${resumeData.value.name}
+
+## 基本信息
+${resumeData.value.basic_info}
+
+## 工作经历
+${resumeData.value.work_exp}
+
+## 项目经历
+${resumeData.value.project_exp}
+
+## 自我评价
+${resumeData.value.self_eval}
+
+## 技能专长
+${resumeData.value.skills}
+
+## 目标职位
+${resumeData.value.target_job}
+
+## 获奖情况
+${resumeData.value.awards}`
+}
+
 // 用户回答记录
 const userAnswers = ref<Array<{ content: string; time: string }>>([])
 const aiConfirmations = ref<Array<{ content: string; nextQuestion: string; time: string }>>([])
-// 统一消息流：按时间顺序渲染，避免用户消息“置顶”观感
+
+// 统一消息流：按时间顺序渲染，避免用户消息"置顶"观感
 const messages = computed(() => {
-  const ua = userAnswers.value.map(a => ({ role: 'user', content: a.content, time: a.time }))
-  const ac = aiConfirmations.value.map(c => ({ role: 'ai', content: `好的，我已经记录了：<strong>${c.content}</strong>${c.nextQuestion ? `<br/>${c.nextQuestion}` : ''}`, time: c.time, html: true }))
+  const ua = userAnswers.value.map((a, index) => ({ 
+    id: `user-${index}-${a.time}`, 
+    role: 'user', 
+    content: a.content, 
+    time: a.time 
+  }))
+  const ac = aiConfirmations.value.map((c, index) => ({ 
+    id: `ai-${index}-${c.time}`, 
+    role: 'ai', 
+    content: `好的，我已经记录了：<strong>${c.content}</strong>${c.nextQuestion ? `<br/>${c.nextQuestion}` : ''}`, 
+    time: c.time, 
+    html: true 
+  }))
   // 简单交错：按出现顺序合并（假设每次回答后会有确认）
   const res: any[] = []
   const n = Math.max(ua.length, ac.length)
@@ -309,27 +347,6 @@ const getInputPlaceholder = () => {
   return `请输入${currentQuestion.value.text.replace('：', '')}`
 }
 
-const workExperience = computed(() => {
-  if (!resumeData.value.work_exp) return []
-  return resumeData.value.work_exp.split('\n').map(exp => {
-    const parts = exp.split('-')
-    return {
-      title: parts[0] || '',
-      description: parts.slice(1).join('-') || ''
-    }
-  })
-})
-
-const projectExperience = computed(() => {
-  if (!resumeData.value.project_exp) return []
-  return resumeData.value.project_exp.split('\n').map(project => {
-    const parts = project.split('-')
-    return {
-      title: parts[0] || '',
-      description: parts.slice(1).join('-') || ''
-    }
-  })
-})
 
 const sendAnswer = async () => {
   if (!inputMessage.value.trim() || isProcessing.value) return
@@ -432,7 +449,8 @@ const saveResume = async () => {
       self_eval: resumeData.value.self_eval,
       awards: resumeData.value.awards,
       target_job: resumeData.value.target_job,
-      template_id: selectedTemplate.value || 1 // 使用选中的模板ID
+      template_id: selectedTemplate.value || 1, // 使用选中的模板ID
+      content: generateResumeContent() // 添加 content 字段
     }
 
     await createResume(apiData)

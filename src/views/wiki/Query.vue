@@ -237,36 +237,10 @@ const loadKnowledgeBases = async () => {
 
 // 加载测试知识库数据
 const loadMockKnowledgeBases = () => {
-  console.log('加载测试知识库数据...')
-  knowledgeBases.value = [
-    {
-      ID: 1,
-      CreatedAt: '2024-01-15T10:00:00Z',
-      UpdatedAt: '2024-01-15T10:00:00Z',
-      DeletedAt: null,
-      title: '技术文档库',
-      url: '',
-      type: WikiType.KNOWLEDGE_BASE,
-      parent_id: 0,
-      wiki_type: 0,
-      user_id: 1,
-      root_id: 0
-    },
-    {
-      ID: 2,
-      CreatedAt: '2024-01-16T14:30:00Z',
-      UpdatedAt: '2024-01-16T14:30:00Z',
-      DeletedAt: null,
-      title: '学习笔记',
-      url: '',
-      type: WikiType.KNOWLEDGE_BASE,
-      parent_id: 0,
-      wiki_type: 0,
-      user_id: 1,
-      root_id: 0
-    }
-  ]
-  console.log('测试知识库数据加载完成:', knowledgeBases.value)
+  console.log('不再加载示例知识库数据...')
+  // 不再加载示例数据，保持空数组
+  knowledgeBases.value = []
+  console.log('知识库列表已清空')
 }
 
 const onWikiChange = () => {

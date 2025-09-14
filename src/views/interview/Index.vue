@@ -271,7 +271,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { createMeeting, getMeetingList, updateMeeting, deleteMeeting } from '@/service/meeting'
+import { createMeeting, getMeetingList, deleteMeeting } from '@/service/meeting'
 import { getWikiList, WikiType, type WikiItem } from '@/service/wiki'
 
 const router = useRouter()
@@ -544,43 +544,24 @@ const loadInterviews = async () => {
         filterInterviews()
       } else {
         console.error('获取面试列表失败: 数据结构不正确', response)
-        loadMockData()
+        // 保持空数组，不加载示例数据
+        interviews.value = []
         filterInterviews()
       }
     } else {
       console.error('获取面试列表失败: 状态码不正确', response.data.code, response.data.msg)
-      loadMockData()
+      // 保持空数组，不加载示例数据
+      interviews.value = []
       filterInterviews()
     }
   } catch (error: any) {
     console.error('获取面试列表失败:', error)
-    loadMockData()
+    // 保持空数组，不加载示例数据
+    interviews.value = []
     filterInterviews()
   }
 }
 
-const loadMockData = () => {
-  interviews.value = [
-    {
-      id: 1,
-      candidate: '张三',
-      position: '高级软件工程师',
-      job_description: '负责公司核心产品的架构设计和开发，要求5年以上Java开发经验，熟悉Spring Boot、MySQL等技术栈。',
-      time: Date.now() / 1000 + 3600, // 1小时后
-      status: 'planned',
-
-    },
-    {
-      id: 2,
-      candidate: '李四',
-      position: '产品经理',
-      job_description: '负责产品规划和需求分析，与开发团队协作推进产品迭代，要求3年以上产品经验。',
-      time: Date.now() / 1000 + 7200, // 2小时后
-      status: 'planned',
-
-    }
-  ]
-}
 
 onMounted(() => {
   console.log('面试管理页面加载')

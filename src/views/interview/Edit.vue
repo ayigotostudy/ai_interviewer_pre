@@ -269,17 +269,8 @@ const loadInterviewData = async () => {
     // const response = await getMeetingDetail(route.params.id)
     // interviewData.value = response.data
     
-    // 使用模拟数据
-    interviewData.value = {
-      candidate: '张三',
-      position: '高级软件工程师',
-      time: new Date(Date.now() + 86400000).toISOString().slice(0, 16), // 明天
-      type: 'text',
-      interviewer: 'AI面试官',
-      description: '本次面试将重点考察候选人的技术能力、项目经验和团队协作能力。',
-      requirements: '1. 5年以上Java开发经验\n2. 熟悉微服务架构\n3. 具备大型项目经验\n4. 良好的沟通能力',
-      status: 'planned'
-    }
+    // 不再使用模拟数据，保持空状态
+    interviewData.value = null
   } catch (error) {
     console.error('获取面试详情失败:', error)
     alert('获取面试详情失败，请重试')

@@ -5,6 +5,7 @@
         <button class="mode-switch-btn" @click="toggleMode">
           {{ isCanvasMode ? '切换到Markdown编辑' : '切换到Canvas编辑' }}
         </button>
+        
         <button class="save-btn" @click="saveResume" :disabled="saving">
           <span v-if="saving" class="loading-spinner"></span>
           {{ saving ? '保存中...' : '保存简历' }}
@@ -221,42 +222,63 @@
         </div>
         
         <!-- 两栏内容区域 -->
-        <div class="editor-content">
-          <div class="editor-form">
-            <div class="form-section">
+        <div class="editor-content" ref="editorContent">
+          <div class="editor-form" :style="{ width: editorWidth + '%' }" ref="editorForm">
+            <div class="form-section" :style="{ height: editorHeight + 'px' }">
               <h3>内容（Markdown）</h3>
               <div class="form-group">
-              <textarea 
-                v-model="resumeData.content"
-                placeholder="# 标题、## 分区、- 列表 等支持实时预览
-
-支持 ::: 区块语法：
-::: start
-**公司名称**
-:::
-**职位名称**
-:::
-**工作时间**
-::: end
-工作描述内容..."
-                class="form-textarea"
-                rows="20"
-              ></textarea>
-                <div class="form-help">
-                  右侧实时预览，支持 Markdown 粗体、标题、列表等
-                  <br>
-                  <strong>新增：</strong>支持 ::: 区块语法，用于工作经历和项目经历的格式化显示
-                </div>
+                <MonacoEditor
+                  v-model="resumeData.content"
+                  language="markdown"
+                  theme="vs"
+                  :height="(editorHeight - 120) + 'px'"
+                  :options="editorOptions"
+                  @ready="onEditorReady"
+                  @change="onEditorChange"
+                />
+              </div>
+            </div>
+            
+            <!-- 垂直拖拽手柄 -->
+            <div 
+              class="vertical-resize-handle" 
+              @mousedown="startVerticalResize"
+              :class="{ 'resizing': isVerticalResizing }"
+            >
+              <div class="vertical-resize-line"></div>
+              <div class="vertical-resize-icon">⋯</div>
+            </div>
+            
+            <div class="form-help">
+              <div class="help-section">
+                <strong>快捷键：</strong>
+                <span class="shortcut">Ctrl/Cmd + B</span> 加粗
+                <span class="shortcut">Ctrl/Cmd + I</span> 斜体
+                <span class="shortcut">Ctrl/Cmd + K</span> 链接
+                <span class="shortcut">Ctrl/Cmd + H</span> 标题
+              </div>
+              <div class="help-section">
+                <strong>支持语法：</strong>Markdown 粗体、标题、列表等，右侧实时预览
+              </div>
+              <div class="help-section">
+                <strong>新增：</strong>支持 ::: 区块语法，用于工作经历和项目经历的格式化显示
               </div>
             </div>
           </div>
 
-          <div class="resume-preview">
+          <!-- 可拖拽分割线 -->
+          <div 
+            class="resize-handle" 
+            @mousedown="startResize"
+            :class="{ 'resizing': isResizing }"
+          >
+            <div class="resize-handle-line"></div>
+            <div class="resize-handle-icon">⋮</div>
+          </div>
+
+          <div class="resume-preview" :style="{ width: previewWidth + '%' }">
             <div class="preview-header">
               <h3>实时预览（增强版）</h3>
-              <div class="template-badge">
-                模板：{{ getTemplateName(resumeData.template_id) }}
-              </div>
             </div>
             <div class="preview-content">
               <div 
@@ -277,6 +299,7 @@
 import { ref, onMounted, nextTick, onUnmounted, watch, computed } from 'vue'
 // import ResumeShow from './ResumeShow.vue' // 暂时注释，使用增强的Markdown解析器
 import CanvasEditorTutorial from './CanvasEditorTutorial.vue'
+import MonacoEditor from './MonacoEditor.vue'
 import { CanvasEditorService, type CanvasElement } from '@/services/CanvasEditorService'
 import { EnhancedMarkdownParser } from '@/utils/MarkdownParser'
 
@@ -302,6 +325,41 @@ const saving = ref(false)
 // 字体调节
 const fontSize = ref(14) // 字体大小
 const lineHeight = ref(1.6) // 行间距
+
+// Monaco Editor相关
+const monacoEditor = ref<any>(null)
+const editorOptions = ref({
+  fontSize: 14,
+  fontFamily: 'SF Mono, Monaco, Inconsolata, Roboto Mono, Source Code Pro, monospace',
+  lineHeight: 1.6,
+  wordWrap: 'on',
+  minimap: { enabled: false },
+  scrollBeyondLastLine: false,
+  automaticLayout: true,
+  tabSize: 2,
+  insertSpaces: true,
+  detectIndentation: true,
+  bracketPairColorization: { enabled: true },
+  guides: {
+    bracketPairs: true,
+    indentation: true
+  }
+})
+
+// 可拖拽分割线相关
+const editorContent = ref<HTMLElement>()
+const editorWidth = ref(40) // 编辑器宽度百分比
+const previewWidth = ref(60) // 预览区域宽度百分比
+const isResizing = ref(false)
+const startX = ref(0)
+const startEditorWidth = ref(0)
+
+// 垂直拖拽相关
+const editorHeight = ref(500) // 编辑器高度
+const isVerticalResizing = ref(false)
+const startY = ref(0)
+const startEditorHeight = ref(0)
+const editorForm = ref<HTMLElement>()
 
 // Canvas相关
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -333,18 +391,6 @@ const availableTemplates = ref([
   { id: 'creative', name: '创意设计' },
   { id: 'professional', name: '专业商务' }
 ])
-
-// 模板名称映射
-const templateNames: { [key: number]: string } = {
-  1: '经典模板',
-  2: '现代简约',
-  3: '创意设计',
-  4: '专业商务'
-}
-
-const getTemplateName = (templateId: number) => {
-  return templateNames[templateId] || '未知模板'
-}
 
 // 切换编辑模式
 const toggleMode = () => {
@@ -395,7 +441,13 @@ watch(() => canvasEditor?.getCanvasData().elements, (newElements) => {
 const enhancedMarkdownPreview = computed(() => {
   let content = props.resumeData.content || ''
   
-  // 如果内容为空，显示示例内容
+  // 如果内容为空，不显示示例内容
+  if (!content.trim()) {
+    return '<div class="empty-content">暂无简历内容</div>'
+  }
+  
+  // 注释掉示例内容
+  /*
   if (!content.trim()) {
     content = `# 张三
 男 | 25岁 | 前端开发工程师 | 本科 | 138-0000-0000 | zhangsan@example.com
@@ -440,6 +492,7 @@ const enhancedMarkdownPreview = computed(() => {
 ::: end
 主修课程：数据结构、算法设计、软件工程、数据库原理等。`
   }
+  */
   
   return EnhancedMarkdownParser.parse(content)
 })
@@ -556,6 +609,95 @@ const handleMouseUp = (_e: MouseEvent) => {
 
 const handleCanvasClick = (_e: MouseEvent) => {
   // 已移到CanvasEditorService中
+}
+
+// Monaco Editor事件处理
+const onEditorReady = (editor: any) => {
+  monacoEditor.value = editor
+  console.log('Monaco Editor ready')
+}
+
+const onEditorChange = (value: string) => {
+  // 编辑器内容变化时的处理
+  console.log('Editor content changed:', value.length, 'characters')
+}
+
+// 拖拽分割线相关方法
+const startResize = (e: MouseEvent) => {
+  isResizing.value = true
+  startX.value = e.clientX
+  startEditorWidth.value = editorWidth.value
+  
+  document.addEventListener('mousemove', handleResize)
+  document.addEventListener('mouseup', stopResize)
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+  
+  e.preventDefault()
+}
+
+const handleResize = (e: MouseEvent) => {
+  if (!isResizing.value || !editorContent.value) return
+  
+  const containerWidth = editorContent.value.offsetWidth
+  const deltaX = e.clientX - startX.value
+  const deltaPercent = (deltaX / containerWidth) * 100
+  
+  let newEditorWidth = startEditorWidth.value + deltaPercent
+  let newPreviewWidth = 100 - newEditorWidth
+  
+  // 限制最小和最大宽度
+  newEditorWidth = Math.max(20, Math.min(80, newEditorWidth))
+  newPreviewWidth = 100 - newEditorWidth
+  
+  editorWidth.value = newEditorWidth
+  previewWidth.value = newPreviewWidth
+}
+
+const stopResize = () => {
+  isResizing.value = false
+  document.removeEventListener('mousemove', handleResize)
+  document.removeEventListener('mouseup', stopResize)
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+}
+
+// 垂直拖拽方法
+const startVerticalResize = (e: MouseEvent) => {
+  isVerticalResizing.value = true
+  startY.value = e.clientY
+  startEditorHeight.value = editorHeight.value
+  
+  document.addEventListener('mousemove', handleVerticalResize)
+  document.addEventListener('mouseup', stopVerticalResize)
+  document.body.style.cursor = 'row-resize'
+  document.body.style.userSelect = 'none'
+  
+  e.preventDefault()
+}
+
+const handleVerticalResize = (e: MouseEvent) => {
+  if (!isVerticalResizing.value || !editorForm.value) return
+  
+  const containerHeight = editorForm.value.offsetHeight
+  const deltaY = e.clientY - startY.value
+  
+  let newHeight = startEditorHeight.value + deltaY
+  
+  // 限制最小和最大高度
+  const minHeight = 300
+  const maxHeight = containerHeight - 20 // 只预留20px的边距，让编辑器可以几乎盖住帮助区域
+  newHeight = Math.max(minHeight, Math.min(maxHeight, newHeight))
+  
+  editorHeight.value = newHeight
+}
+
+const stopVerticalResize = () => {
+  isVerticalResizing.value = false
+  document.removeEventListener('mousemove', handleVerticalResize)
+  document.removeEventListener('mouseup', stopVerticalResize)
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
 }
 
 // 保存简历
@@ -780,8 +922,8 @@ onUnmounted(() => {
 
 :deep(.resume-container .experience-list) {
   margin: 8pt 0 0 0;
-  padding-left: 1em;
-  list-style: disc;
+  padding-left: 0;
+  list-style: none;
 }
 
 :deep(.resume-container .experience-list li) {
@@ -795,8 +937,8 @@ onUnmounted(() => {
   border-left: none;
   transition: none;
   font-size: 11pt;
-  list-style-type: disc;
-  margin-left: 1em;
+  list-style: none;
+  margin-left: 0;
 }
 
 :deep(.resume-container .experience-list li:hover) {
@@ -831,27 +973,33 @@ onUnmounted(() => {
   color: #000;
 }
 .canvas-resume-editor {
-  min-height: 100vh;
+  min-height: calc(100vh - 120px);
   background: #F8FAFC;
-  padding: 0 20px;
+  padding: 0 2rem;
+  margin: 2rem auto;
+  max-width: 1600px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
 .editor-header {
   background: white;
-  border-bottom: 1px solid #E5E7EB;
-  padding: 1rem 2rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1.5rem 2rem;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .header-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
 .mode-switch-btn {
-  background: #2563EB;
+  background: #3b82f6;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -859,15 +1007,15 @@ onUnmounted(() => {
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .mode-switch-btn:hover {
-  background: #1D4ED8;
+  background: #2563eb;
 }
 
 .save-btn {
-  background: #10B981;
+  background: #10b981;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -878,7 +1026,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .save-btn:hover:not(:disabled) {
@@ -1217,20 +1365,24 @@ canvas:hover {
   width: 100px;
   height: 6px;
   border-radius: 3px;
-  background: #dee2e6;
+  background: #e2e8f0;
   outline: none;
   -webkit-appearance: none;
   appearance: none;
+  cursor: pointer;
+}
+
+.slider:hover {
+  background: #cbd5e0;
 }
 
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  appearance: none;
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #007bff;
+  background: #3b82f6;
   cursor: pointer;
   border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -1240,7 +1392,7 @@ canvas:hover {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #007bff;
+  background: #3b82f6;
   cursor: pointer;
   border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -1249,37 +1401,161 @@ canvas:hover {
 .control-value {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #495057;
+  color: #6b7280;
   min-width: 40px;
   text-align: center;
 }
 
 .editor-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   flex: 1;
   min-height: 0;
+  max-height: calc(100vh - 200px);
+  background: white;
+  border-radius: 0 0 16px 16px;
+  overflow: hidden;
+  position: relative;
 }
 
 .editor-form {
   padding: 2rem;
-  background: #f8f9fa;
-  border-right: 1px solid #e9ecef;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   display: flex;
   flex-direction: column;
+  border-radius: 0 0 0 16px;
+  overflow: hidden;
+  min-height: 0;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.resize-handle {
+  width: 8px;
+  background: #e2e8f0;
+  cursor: col-resize;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.resize-handle:hover {
+  background: #3b82f6;
+  width: 12px;
+}
+
+.resize-handle.resizing {
+  background: #3b82f6;
+  width: 12px;
+}
+
+.resize-handle-line {
+  width: 2px;
+  height: 100%;
+  background: #cbd5e0;
+  transition: all 0.2s ease;
+}
+
+.resize-handle:hover .resize-handle-line,
+.resize-handle.resizing .resize-handle-line {
+  background: white;
+}
+
+.resize-handle-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: bold;
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.resize-handle:hover .resize-handle-icon,
+.resize-handle.resizing .resize-handle-icon {
+  color: white;
+}
+
+.vertical-resize-handle {
+  height: 8px;
+  background: #e2e8f0;
+  cursor: row-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  margin: 0.5rem 0;
+}
+
+.vertical-resize-handle:hover {
+  background: #3b82f6;
+  height: 12px;
+}
+
+.vertical-resize-handle.resizing {
+  background: #3b82f6;
+  height: 12px;
+}
+
+.vertical-resize-line {
+  height: 2px;
+  width: 100%;
+  background: #cbd5e0;
+  transition: all 0.2s ease;
+}
+
+.vertical-resize-handle:hover .vertical-resize-line,
+.vertical-resize-handle.resizing .vertical-resize-line {
+  background: white;
+}
+
+.vertical-resize-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: bold;
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.vertical-resize-handle:hover .vertical-resize-icon,
+.vertical-resize-handle.resizing .vertical-resize-icon {
+  color: white;
 }
 
 .form-section {
-  margin-bottom: 2rem;
+  margin-bottom: 0;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .form-section h3 {
-  margin: 0 0 1rem 0;
-  font-size: 1.25rem;
-  font-weight: 600;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.4rem;
+  font-weight: 700;
   color: #1F2937;
-  border-bottom: 1px solid #E5E7EB;
-  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #3b82f6;
+  padding-bottom: 0.75rem;
+  letter-spacing: -0.025em;
 }
 
 .form-group {
@@ -1287,134 +1563,200 @@ canvas:hover {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
 }
 
 .form-textarea {
   width: 100%;
-  padding: 1rem;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  color: #333;
+  padding: 1.5rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  color: #374151;
   background: white;
   transition: all 0.3s ease;
-  resize: none;
+  resize: vertical;
   flex: 1;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+  line-height: 1.6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-height: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  box-sizing: border-box;
 }
 
 .form-textarea:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  background: #fafbfc;
 }
 
 .form-help {
   margin-top: 0.5rem;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #6B7280;
-  font-style: italic;
+  line-height: 1.5;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+  flex-shrink: 0;
+}
+
+.help-section {
+  margin-bottom: 0.5rem;
+}
+
+.help-section:last-child {
+  margin-bottom: 0;
+}
+
+.shortcut {
+  display: inline-block;
+  padding: 0.2rem 0.4rem;
+  margin: 0 0.2rem;
+  background: #e2e8f0;
+  border-radius: 4px;
+  font-family: 'SF Mono', Monaco, Inconsolata, 'Roboto Mono', 'Source Code Pro', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
 }
 
 .resume-preview {
   background: white;
-  padding: 2rem;
+  padding: 3rem;
   overflow-y: auto;
   max-height: calc(100vh - 120px);
+  border-radius: 0 0 16px 0;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .preview-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #E5E7EB;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .preview-header h3 {
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: #1F2937;
-}
-
-.template-badge {
-  padding: 0.5rem 1rem;
-  background: #DBEAFE;
-  color: #1E40AF;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  letter-spacing: -0.025em;
 }
 
 .preview-content {
-  font-size: 0.9rem;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #374151;
+  background: #fafafa;
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 /* 响应式设计 */
 @media (max-width: 1024px) {
   .canvas-resume-editor {
-    padding: 0 10px;
+    margin: 1rem;
+    padding: 0 1rem;
   }
   
-  .canvas-editor-area,
-  .markdown-editor-area {
-    grid-template-columns: 1fr;
+  .editor-content {
+    flex-direction: column;
   }
   
-  .canvas-toolbar {
+  .editor-form {
+    border-radius: 0;
     border-right: none;
-    border-bottom: 1px solid #E5E7EB;
+    border-bottom: 1px solid #e2e8f0;
+    width: 100% !important;
+  }
+  
+  .resize-handle {
+    width: 100%;
+    height: 8px;
+    cursor: row-resize;
+    flex-direction: row;
+  }
+  
+  .resize-handle:hover {
+    width: 100%;
+    height: 12px;
+  }
+  
+  .resize-handle.resizing {
+    height: 12px;
+  }
+  
+  .resize-handle-line {
+    width: 100%;
+    height: 2px;
+  }
+  
+  .resize-handle-icon {
+    transform: translate(-50%, -50%) rotate(90deg);
+  }
+  
+  .resume-preview {
+    border-radius: 0 0 16px 16px;
+    width: 100% !important;
   }
 }
 
 @media (max-width: 768px) {
-  .editor-container {
+  .canvas-resume-editor {
+    margin: 0.5rem;
+    padding: 0 0.5rem;
+  }
+  
+  .editor-header {
+    padding: 1.5rem 1rem;
+  }
+  
+  .editor-form {
     padding: 1rem;
   }
   
-  .canvas-editor-area,
-  .markdown-editor-area {
-    border-radius: 8px;
-  }
-  
-  .editor-form,
   .resume-preview {
     padding: 1rem;
   }
   
-  .editor-content {
-    grid-template-columns: 1fr;
-    min-height: auto;
+  .form-section {
+    padding: 1rem;
+    margin-bottom: 1rem;
   }
   
-  .editor-toolbar {
-    padding: 0.75rem 1rem;
+  .form-section h3 {
+    font-size: 1.2rem;
   }
   
-  .toolbar-controls {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
+  .form-textarea {
+    padding: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    min-height: 300px;
+    max-height: 60vh;
   }
   
-  .control-group {
-    width: 100%;
+  .preview-header h3 {
+    font-size: 1.3rem;
   }
   
-  .control-input {
-    justify-content: space-between;
-  }
-  
-  .slider {
-    flex: 1;
-    margin-right: 1rem;
-  }
-  
-  .header-actions {
-    flex-direction: column;
-    gap: 1rem;
+  .template-badge {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
   }
 }
 </style>

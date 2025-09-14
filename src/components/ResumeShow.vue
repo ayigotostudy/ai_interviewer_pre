@@ -198,9 +198,26 @@ console.log('处理后的内容:', processedContent.value);
 :deep(strong) { font-weight: 700; color:#000; }
 
 /* 列表样式 */
-:deep(ul), :deep(ol) { margin: 8pt 0 10pt 0; padding-left: 1em; }
-:deep(li) { margin-bottom: 4pt; line-height: 1.5; color:#000; }
-:deep(li)::marker { color:#000; }
+:deep(ul), :deep(ol) { 
+  margin: 8pt 0 10pt 0; 
+  padding-left: 0; 
+  list-style: none !important; 
+}
+:deep(li) { 
+  margin-bottom: 4pt; 
+  line-height: 1.5; 
+  color:#000; 
+  list-style: none !important;
+}
+:deep(li)::marker { 
+  display: none !important;
+}
+:deep(ul li) {
+  list-style: none !important;
+}
+:deep(ul li)::marker {
+  display: none !important;
+}
 
 /* —— 可选：二级标题左侧蓝色竖线（仅在容器带有 .h2-bar 时启用） —— */
 .h2-bar :deep(h2) {

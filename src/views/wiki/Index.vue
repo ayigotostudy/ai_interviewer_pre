@@ -252,78 +252,10 @@ const loadWikiList = async () => {
 
 // 加载测试数据
 const loadMockData = () => {
-  console.log('加载测试数据...')
-  wikiList.value = [
-    // 知识库（type=0, parent_id=0）
-    {
-      ID: 1,
-      CreatedAt: '2024-01-15T10:00:00Z',
-      UpdatedAt: '2024-01-15T10:00:00Z',
-      DeletedAt: null,
-      title: '技术文档库',
-      url: '',
-      type: WikiType.KNOWLEDGE_BASE,
-      parent_id: 0,
-      wiki_type: 0,
-      user_id: 1,
-      root_id: 0
-    },
-    {
-      ID: 2,
-      CreatedAt: '2024-01-16T14:30:00Z',
-      UpdatedAt: '2024-01-16T14:30:00Z',
-      DeletedAt: null,
-      title: '学习笔记',
-      url: '',
-      type: WikiType.KNOWLEDGE_BASE,
-      parent_id: 0,
-      wiki_type: 0,
-      user_id: 1,
-      root_id: 0
-    },
-    {
-      ID: 3,
-      CreatedAt: '2024-01-17T09:15:00Z',
-      UpdatedAt: '2024-01-17T09:15:00Z',
-      DeletedAt: null,
-      title: '项目资料',
-      url: '',
-      type: WikiType.KNOWLEDGE_BASE,
-      parent_id: 0,
-      wiki_type: 0,
-      user_id: 1,
-      root_id: 0
-    },
-    // 文件夹（type=1）
-    {
-      ID: 101,
-      CreatedAt: '2024-01-15T11:00:00Z',
-      UpdatedAt: '2024-01-15T11:00:00Z',
-      DeletedAt: null,
-      title: '技术文档',
-      url: '',
-      type: WikiType.FOLDER,
-      parent_id: 1,
-      wiki_type: 0,
-      user_id: 1,
-      root_id: 1
-    },
-    // 文章（type=2）
-    {
-      ID: 201,
-      CreatedAt: '2024-01-15T12:00:00Z',
-      UpdatedAt: '2024-01-15T12:00:00Z',
-      DeletedAt: null,
-      title: 'API文档.md',
-      url: '',
-      type: WikiType.ARTICLE,
-      parent_id: 101,
-      wiki_type: 0,
-      user_id: 1,
-      root_id: 1
-    }
-  ]
-  console.log('测试数据加载完成:', wikiList.value)
+  console.log('不再加载示例数据...')
+  // 不再加载示例数据，保持空数组
+  wikiList.value = []
+  console.log('知识库列表已清空')
 }
 
 const handleSearch = async () => {

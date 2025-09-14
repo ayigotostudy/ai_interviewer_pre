@@ -21,7 +21,7 @@
     </div>
 
     <div class="chat-messages" ref="messagesContainer">
-      <div v-for="(message, index) in messages" :key="index" class="message-group">
+      <div v-for="message in messages" :key="message.id" class="message-group">
         <div v-if="message.date" class="date-separator">
           {{ message.date }}
         </div>
@@ -86,6 +86,7 @@
 import { ref, onMounted, nextTick, watch } from 'vue'
 
 interface Message {
+  id: string
   content: string
   type: 'user' | 'assistant'
   time: string
@@ -117,6 +118,11 @@ const isRecording = ref(false)
 const messagesContainer = ref<HTMLElement>()
 const audioInput = ref<HTMLInputElement>()
 
+// 生成唯一ID
+const generateId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2)
+}
+
 // 添加消息
 const addMessage = (content: string, type: 'user' | 'assistant') => {
   const now = new Date()
@@ -129,6 +135,7 @@ const addMessage = (content: string, type: 'user' | 'assistant') => {
   
   if (shouldAddDate) {
     messages.value.push({
+      id: generateId(),
       content: today,
       type: 'assistant',
       time: '',
@@ -137,6 +144,7 @@ const addMessage = (content: string, type: 'user' | 'assistant') => {
   }
   
   messages.value.push({
+    id: generateId(),
     content,
     type,
     time

@@ -281,46 +281,26 @@ const loadResumes = async () => {
         filterResumes()
       } else {
         console.error('获取简历列表失败: 数据结构不正确', response)
-        loadMockData()
+        // 保持空数组，不加载示例数据
+        resumes.value = []
         filterResumes()
       }
     } else {
       console.error('获取简历列表失败: 状态码不正确', response.data.code, response.data.msg)
-      loadMockData()
+      // 保持空数组，不加载示例数据
+      resumes.value = []
       filterResumes()
     }
   } catch (error) {
     console.error('获取简历列表失败:', error)
-    loadMockData()
+    // 保持空数组，不加载示例数据
+    resumes.value = []
     filterResumes()
   }
 }
 
 onMounted(() => {
-  // 先添加测试数据确保组件能正常渲染
-  resumes.value = [
-    {
-      user_id: 1,
-      name: '测试简历',
-      content: `# 张三
-男 ｜ 28岁 ｜ 软件工程师 ｜ 本科 ｜ 13800138000 ｜ zhangsan@example.com
-
-## 自我评价
-5年Java开发经验，熟悉微服务架构。
-
-## 工作经历
-**腾讯科技** - 高级软件工程师 (2020-2022)
-负责微信支付系统的开发和维护
-
-## 专业技能
-Java, Spring Boot, MySQL, Redis, Docker`,
-      template_id: 1,
-      status: 1
-    }
-  ]
-  filterResumes()
-  
-  // 然后尝试加载真实数据
+  // 直接加载真实数据，不添加测试数据
   loadResumes()
 })
 </script>
@@ -683,7 +663,8 @@ Java, Spring Boot, MySQL, Redis, Docker`,
 /* 列表样式 */
 .resume-content ul {
   margin: 0.5rem 0;
-  padding-left: 1rem;
+  padding-left: 0;
+  list-style: none !important;
 }
 
 .resume-content li {
@@ -691,6 +672,15 @@ Java, Spring Boot, MySQL, Redis, Docker`,
   line-height: 1.4;
   color: #374151;
   font-size: 0.8rem;
+  list-style: none !important;
+}
+
+.resume-content ul li {
+  list-style: none !important;
+}
+
+.resume-content ul li::marker {
+  display: none !important;
 }
 
 /* 段落样式 */

@@ -327,61 +327,9 @@ const loadEvaluation = async () => {
 
 // 加载模拟评价数据（实际项目中应该调用真实接口）
 const loadMockEvaluationData = async () => {
-  // 模拟 API 延迟
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  
-  evaluationData.value = {
-    overallEvaluation: {
-      score: 85,
-      maxScore: 100,
-      rating: "良好",
-      chartType: "gauge"
-    },
-    competencyDimensions: {
-      chartType: "radar",
-      dimensions: [
-        { name: "沟通表达", score: 82, fullMark: 100 },
-        { name: "逻辑思维", score: 88, fullMark: 100 },
-        { name: "专业知识", score: 90, fullMark: 100 },
-        { name: "学习能力", score: 85, fullMark: 100 },
-        { name: "抗压性", score: 80, fullMark: 100 },
-        { name: "团队合作", score: 78, fullMark: 100 }
-      ]
-    },
-    answerAnalysis: {
-      keywordCloud: {
-        chartType: "wordcloud",
-        keywords: [
-          { text: "Spring Boot", value: 32 },
-          { text: "微服务", value: 28 },
-          { text: "MySQL", value: 25 },
-          { text: "分布式系统", value: 22 },
-          { text: "问题解决", value: 19 },
-          { text: "Java", value: 18 },
-          { text: "架构设计", value: 16 },
-          { text: "性能优化", value: 14 }
-        ]
-      },
-      jdMatch: {
-        chartType: "doughnut",
-        matchPercentage: 76,
-        matchedKeywords: ["Java", "Spring Boot", "MySQL", "微服务"],
-        missingKeywords: ["Redis", "消息队列", "容器化", "Kubernetes"]
-      }
-    },
-    interviewEvaluation: "候选人整体表现良好，具备扎实的专业技术功底和清晰的逻辑思维能力。在面试过程中能够围绕Spring Boot、微服务架构和MySQL等核心技术栈展开深入讨论，展现出较强的系统设计能力和问题解决导向。候选人学习能力较好，对新知识保持求知欲，但在高压环境下的稳定性与团队协作意识有进一步提升空间。其技术能力与当前岗位要求有较高匹配度，但在分布式中间件和云原生技术领域存在经验缺口。",
-    improvablePoints: [
-      "团队协作能力有待加强：在跨部门沟通和团队项目协作中表现较为被动，需提升倾听他人意见、整合团队资源的意识与能力[1](@ref)。",
-      "抗压性与情绪管理：在压力情境下表现出一定的紧张感，需增强应对复杂问题和紧迫任务的稳定性与韧性[5](@ref)。",
-      "技术广度需扩展：缺乏Redis缓存应用、消息队列及容器化技术（如Docker/K8s）的实战经验，需针对性补充分布式系统相关知识[3](@ref)。",
-      "表达精炼度不足：技术描述有时过于细节，需提升结构化表达和总结概括能力，增强与非技术人员的沟通效果[1](@ref)。",
-      "岗位匹配度提升：虽然基础技能扎实，但仍需弥补JD中明确的'消息队列'和'容器化'要求，可通过快速学习或项目实践补足[3](@ref)。"
-    ]
-  }
-  
-  // 等待 DOM 更新后初始化图表
-  await nextTick()
-  initCharts()
+  // 不再加载示例数据，保持空状态
+  evaluationData.value = null
+  console.log('不再加载示例评价数据')
 }
 
 // 初始化所有图表

@@ -198,7 +198,13 @@ const formatTime = (timestamp: string) => {
 const enhancedMarkdownPreview = computed(() => {
   let content = resume.value.content || ''
   
-  // 如果内容为空，显示示例内容
+  // 如果内容为空，不显示示例内容
+  if (!content.trim()) {
+    return '<div class="empty-content">暂无简历内容</div>'
+  }
+  
+  // 注释掉示例内容，不再显示
+  /*
   if (!content.trim()) {
     content = `# 张三
 男 | 25岁 | 前端开发工程师 | 本科 | 138-0000-0000 | zhangsan@example.com
@@ -243,6 +249,7 @@ const enhancedMarkdownPreview = computed(() => {
 ::: end
 主修课程：数据结构、算法设计、软件工程、数据库原理等。`
   }
+  */
   
   return EnhancedMarkdownParser.parse(content)
 })
@@ -417,84 +424,9 @@ const loadResumeDetail = async () => {
     }
   } catch (error) {
     console.error('获取简历详情失败:', error)
-    // 使用模拟数据
-    resume.value = {
-      ID: parseInt(route.params.id as string),
-      CreatedAt: new Date().toISOString(),
-      UpdatedAt: new Date().toISOString(),
-      DeletedAt: null,
-      user_id: 0, // 使用默认值，而不是route.params.id
-      name: '软件工程师简历',
-      content: `# 张三
-男 ｜ 28岁 ｜ 软件工程师 ｜ 本科 ｜ 13800138000 ｜ zhangsan@example.com
-
-## 自我评价
-5年Java开发经验，熟悉微服务架构，有大型项目经验，具备良好的团队协作能力和问题解决能力。
-
-## 工作经历
-
-::: start
-**腾讯科技**
-
-:::
-**高级软件工程师**
-
-:::
-**2020-2022**
-
-::: end
-负责微信支付系统的开发和维护
-
-::: start
-**阿里巴巴**
-
-:::
-**软件工程师**
-
-:::
-**2018-2020**
-
-::: end
-参与电商平台的开发
-
-## 项目经历
-
-::: start
-**微信支付系统**
-
-:::
-**微服务架构**
-
-:::
-**2020-2022**
-
-::: end
-负责支付核心模块的设计和实现
-
-::: start
-**电商平台**
-
-:::
-**React+Node.js**
-
-:::
-**2018-2020**
-
-::: end
-参与用户端和商家端的开发
-
-## 专业技能
-Java, Spring Boot, MySQL, Redis, Docker, Kubernetes, 微服务架构
-
-## 目标职位
-高级软件工程师
-
-## 获奖情况
-优秀员工奖`,
-      template_id: 1,
-      status: 1
-    }
-    console.log('使用模拟数据:', resume.value)
+    // 不再使用模拟数据，保持空状态
+    resume.value = null
+    console.log('简历详情加载失败，保持空状态')
   }
 }
 
@@ -1165,13 +1097,14 @@ onMounted(() => {
 :deep(.resume-container ul) {
   margin: 8px 0;
   padding-left: 0;
-  list-style: none;
+  list-style: none !important;
 }
 
 :deep(.resume-container li) {
   margin: 4px 0;
   position: relative;
   padding-left: 16px;
+  list-style: none !important;
 }
 
 :deep(.resume-container li::before) {
@@ -1180,6 +1113,18 @@ onMounted(() => {
   font-weight: bold;
   position: absolute;
   left: 0;
+}
+
+:deep(.resume-container li::marker) {
+  display: none !important;
+}
+
+:deep(.resume-container ul li) {
+  list-style: none !important;
+}
+
+:deep(.resume-container ul li::marker) {
+  display: none !important;
 }
 
 :deep(.resume-container strong) {

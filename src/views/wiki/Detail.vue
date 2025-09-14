@@ -461,76 +461,10 @@ const loadWikiStructure = async () => {
 
 // 加载测试文件数据
 const loadMockStructure = () => {
-  console.log('加载测试文件数据...')
-  const mockData = [
-    {
-      ID: 101,
-      CreatedAt: '2024-01-15T11:00:00Z',
-      UpdatedAt: '2024-01-15T11:00:00Z',
-      DeletedAt: null,
-      title: '技术文档',
-      url: '',
-      type: WikiType.FOLDER,
-      parent_id: currentWiki.value?.ID || 1,
-      wiki_type: 0,
-      user_id: 1,
-      root_id: currentWiki.value?.ID || 1
-    },
-    {
-      ID: 201,
-      CreatedAt: '2024-01-15T12:00:00Z',
-      UpdatedAt: '2024-01-15T12:00:00Z',
-      DeletedAt: null,
-      title: 'API文档.md',
-      url: '',
-      type: WikiType.ARTICLE,
-      parent_id: 101,
-      wiki_type: 0,
-      user_id: 1,
-      root_id: currentWiki.value?.ID || 1
-    },
-    {
-      ID: 202,
-      CreatedAt: '2024-01-15T13:00:00Z',
-      UpdatedAt: '2024-01-15T13:00:00Z',
-      DeletedAt: null,
-      title: '数据库设计.pdf',
-      url: '',
-      type: WikiType.ARTICLE,
-      parent_id: 0,
-      wiki_type: 0,
-      user_id: 1,
-      root_id: currentWiki.value?.ID || 1
-    }
-  ]
-  
-  // 构建层级结构
-  const buildHierarchy = (items: any[], parentId: number = 0): any[] => {
-    return items
-      .filter(item => item.parent_id === parentId)
-      .map(item => ({
-        ...item,
-        title: cleanTitle(item.title),
-        children: buildHierarchy(items, item.ID)
-      }))
-  }
-  
-  wikiStructure.value = buildHierarchy(mockData)
-  
-  // 为所有文件夹添加展开状态
-  const addExpandedState = (items: any[]) => {
-    items.forEach(item => {
-      if (item.type === WikiType.FOLDER) {
-        item.isExpanded = true // 默认展开
-      }
-      if (item.children && item.children.length > 0) {
-        addExpandedState(item.children)
-      }
-    })
-  }
-  addExpandedState(wikiStructure.value)
-  
-  console.log('测试文件层级结构加载完成:', wikiStructure.value)
+  console.log('不再加载示例文件数据...')
+  // 不再加载示例数据，保持空数组
+  wikiStructure.value = []
+  console.log('知识库文件结构已清空')
 }
 
 const selectNode = (node: WikiItem) => {
